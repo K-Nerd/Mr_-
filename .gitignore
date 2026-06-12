@@ -21,6 +21,8 @@ logs/
 *.mov
 *.webm
 *.m4v
+*.zip
+*.Zip
 
 .DS_Store
 Thumbs.db
