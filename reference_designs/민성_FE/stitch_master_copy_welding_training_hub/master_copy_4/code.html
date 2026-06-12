@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>커뮤니티 게시글 (수정) - Master-Copy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;family=Geist:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error-container": "#ffdad6",
+                      "secondary-container": "#ee9800",
+                      "secondary-fixed": "#ffddb8",
+                      "tertiary-container": "#8e9cb4",
+                      "on-tertiary-fixed": "#0d1c2f",
+                      "on-tertiary-fixed-variant": "#3a485c",
+                      "on-secondary-container": "#5b3800",
+                      "background": "#0b1326",
+                      "surface-container-highest": "#2d3449",
+                      "surface": "#0b1326",
+                      "inverse-primary": "#006591",
+                      "outline-variant": "#3e4850",
+                      "outline": "#88929b",
+                      "error": "#ffb4ab",
+                      "tertiary-fixed": "#d5e3fd",
+                      "on-primary": "#00344d",
+                      "primary-fixed": "#c9e6ff",
+                      "inverse-surface": "#dae2fd",
+                      "on-background": "#dae2fd",
+                      "on-tertiary": "#233144",
+                      "secondary": "#ffb95f",
+                      "on-error": "#690005",
+                      "on-secondary-fixed": "#2a1700",
+                      "tertiary": "#b9c7e0",
+                      "on-tertiary-container": "#263447",
+                      "tertiary-fixed-dim": "#b9c7e0",
+                      "primary": "#89ceff",
+                      "surface-container": "#171f33",
+                      "error-container": "#93000a",
+                      "surface-container-low": "#131b2e",
+                      "surface-container-lowest": "#060e20",
+                      "on-secondary-fixed-variant": "#653e00",
+                      "on-primary-container": "#003751",
+                      "on-surface": "#dae2fd",
+                      "on-surface-variant": "#bec8d2",
+                      "surface-variant": "#2d3449",
+                      "surface-dim": "#0b1326",
+                      "surface-container-high": "#222a3d",
+                      "surface-bright": "#31394d",
+                      "surface-tint": "#89ceff",
+                      "primary-fixed-dim": "#89ceff",
+                      "on-secondary": "#472a00",
+                      "inverse-on-surface": "#283044",
+                      "primary-container": "#0ea5e9",
+                      "secondary-fixed-dim": "#ffb95f",
+                      "on-primary-fixed-variant": "#004c6e",
+                      "on-primary-fixed": "#001e2f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xs": "8px",
+                      "xl": "64px",
+                      "md": "24px",
+                      "lg": "40px",
+                      "gutter": "24px",
+                      "base": "4px",
+                      "margin": "32px",
+                      "sm": "16px"
+              },
+              "fontFamily": {
+                      "technical-data": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg-mobile": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "JetBrains Mono"
+                      ],
+                      "body-md": [
+                              "Geist"
+                      ]
+              },
+              "fontSize": {
+                      "technical-data": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-xl": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.1",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Custom scrollbar for tech-noir feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #060e20; /* surface-container-lowest */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3e4850; /* outline-variant */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #89ceff; /* primary */
+        }
+
+        /* Scanline effect overlay */
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 100;
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.15;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen flex selection:bg-primary/30 selection:text-primary">
+<!-- Global Grid Background -->
+<div class="fixed inset-0 pointer-events-none z-0">
+<div class="absolute inset-0 bg-[linear-gradient(to_right,#3e4850_1px,transparent_1px),linear-gradient(to_bottom,#3e4850_1px,transparent_1px)] bg-[size:48px_48px] opacity-10"></div>
+</div>
+<!-- SideNavBar (From JSON) -->
+<nav class="fixed left-0 top-0 h-full flex flex-col w-[240px] z-40 transition-all duration-300 bg-surface-container-low/90 backdrop-blur-lg border-r border-outline-variant/20 hidden md:flex">
+<!-- Header -->
+<div class="p-md border-b border-outline-variant/20 flex items-center gap-sm">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container-highest flex items-center justify-center border border-outline-variant/40 overflow-hidden shrink-0">
+<img alt="System Logo" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKtxRKQDTnEgF_eXEPuNn0_5KxpdMZHcTaWMuIINrI_AEzcIYLpmUgtuGXiPy3NMghX-7jLaYanmEQ_jlKTrb-qUqCDxXZDw49_3K7p5_UnHK-0AgoOlXG73hxrkaoQ47bSZ3fBIwMQ6seHWLNYvNXynAJq6jQdLA_bE7LN14HvEwFlGBkZQWpMDmB1bpbkMcJBc1xYeuJVO8RnawUj8VoWN5KdCVqJIjGiLL-jbS0Ou3BHmC3C0UMKs5aB7bTgDz3wO2VtbAIf4Q"/>
+</div>
+<div>
+<div class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">MC-OPERATOR</div>
+<div class="font-technical-data text-technical-data text-on-surface-variant text-[10px]">V2.4 Active</div>
+</div>
+</div>
+<!-- Main Tabs -->
+<div class="flex-1 overflow-y-auto py-sm flex flex-col gap-xs px-xs">
+<!-- Inactive -->
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">dashboard</span>
+<span class="font-technical-data text-technical-data">Dashboard</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">play_circle</span>
+<span class="font-technical-data text-technical-data">Training Videos</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">smart_toy</span>
+<span class="font-technical-data text-technical-data">Master Knowledge</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">add_a_photo</span>
+<span class="font-technical-data text-technical-data">Photo Feedback</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-primary border-l-2 border-primary-fixed-dim bg-primary/10 active:scale-95 shadow-[inset_0_0_20px_rgba(137,206,255,0.05)]" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-technical-data text-technical-data">Knowledge Archive</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">admin_panel_settings</span>
+<span class="font-technical-data text-technical-data">Admin</span>
+</a>
+</div>
+<!-- Footer Tabs -->
+<div class="p-xs border-t border-outline-variant/20 flex flex-col gap-xs bg-surface-container/50">
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span class="font-technical-data text-technical-data">Settings</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined text-[18px]">help</span>
+<span class="font-technical-data text-technical-data">Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-[240px] flex flex-col relative z-10 w-full min-h-screen">
+<!-- Mobile Header (Visible only on small screens) -->
+<header class="md:hidden flex items-center justify-between p-sm border-b border-outline-variant/30 bg-surface/80 backdrop-blur-xl sticky top-0 z-30">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">menu</span>
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary">OPERATIVE NET</span>
+</div>
+</header>
+<!-- Top Breadcrumb / Utility bar -->
+<div class="px-gutter py-sm border-b border-outline-variant/20 flex items-center justify-between bg-surface-container-lowest/80 backdrop-blur-sm sticky top-0 md:top-0 z-20">
+<div class="flex items-center gap-sm font-technical-data text-technical-data text-on-surface-variant text-[12px]">
+<a class="hover:text-primary transition-colors" href="#">Knowledge Archive</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">TIG Welding</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface">Thread ID: 8992-B</span>
+</div>
+<div class="flex items-center gap-sm">
+<button class="bg-surface-container border border-outline-variant/50 hover:border-primary hover:text-primary text-on-surface-variant px-sm py-xs rounded-DEFAULT font-technical-data text-technical-data text-[12px] transition-all flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">bookmark</span> Save Thread
+                </button>
+</div>
+</div>
+<!-- Content Grid -->
+<div class="flex-1 max-w-[1600px] w-full mx-auto p-gutter flex gap-lg">
+<!-- Left Column: Thread Content -->
+<div class="flex-1 flex flex-col gap-md min-w-0">
+<!-- Thread Header Info -->
+<div class="mb-sm">
+<div class="flex items-center gap-sm mb-xs">
+<span class="inline-flex items-center gap-xs px-2 py-1 rounded-sm bg-primary/10 border border-primary/30 font-label-caps text-label-caps text-primary tracking-widest shadow-[0_0_10px_rgba(137,206,255,0.15)]">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                            ACTIVE DISCUSSION
+                        </span>
+<span class="font-technical-data text-technical-data text-on-surface-variant text-[12px] bg-surface-container px-2 py-1 rounded-sm border border-outline-variant/20">
+                            TAGS: 6G, STAINLESS, ROOT-PASS, TIG
+                        </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mt-xs tracking-tight">6G Stainless Pipe Root Pass - Penetration Inconsistencies</h1>
+</div>
+<!-- Post 1 (Original Post) -->
+<article class="bg-surface-container-low/60 backdrop-blur-md border border-outline-variant/40 rounded-lg overflow-hidden flex flex-col group relative">
+<!-- Subtle hover glow border -->
+<div class="absolute inset-0 border border-primary/0 group-hover:border-primary/30 rounded-lg pointer-events-none transition-colors duration-500"></div>
+<!-- Post Header -->
+<div class="bg-surface-container/80 p-sm border-b border-outline-variant/20 flex justify-between items-start">
+<div class="flex items-center gap-sm">
+<div class="w-12 h-12 rounded-DEFAULT bg-surface-container-highest border border-outline-variant overflow-hidden">
+<img alt="Operator Avatar" class="w-full h-full object-cover opacity-80 mix-blend-screen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfxbt2pGBH7B9t-4zJlBuNtZQJoFukEG7jusVOJZMlXnZm1FCc74hTlscgXMLJZCF3iHxBvNPfoYRzAl8To9gVP2vdFn8sorjFdAVMN3TDfAtdxmO-gN8G2xaSFm2jjVC8_V8rZB8bV5VJoyyR_j0wDjQ7mtUtyL_jqFLYMCZSEZJekU6mkqPFcDWRx5DcyuX6GtGtbP3l7fR1g9usDN6uXe28zf8Iy4RnMN3bI1uS1dWm6KB6ZUaA-NoJhKQixBeIa2sCWfS4jZg"/>
+</div>
+<div>
+<div class="flex items-center gap-xs">
+<span class="font-headline-lg-mobile text-[16px] font-bold text-on-surface">Operative_77</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary" title="Verified Member">verified</span>
+</div>
+<div class="font-technical-data text-technical-data text-[11px] text-on-surface-variant mt-0.5">
+                                    SYS_ID: OP-77-902 | RANK: JOURNEYMAN
+                                </div>
+</div>
+</div>
+<div class="font-technical-data text-technical-data text-[12px] text-on-surface-variant text-right">
+<div class="flex items-center gap-xs justify-end">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                T-MINUS 04:12:00
+                            </div>
+<div class="mt-1 opacity-60">POST_REF: 0xA1B2</div>
+</div>
+</div>
+<!-- Post Body -->
+<div class="p-md text-on-surface font-body-md text-body-md leading-relaxed space-y-md">
+<p>
+                            Running a 6G schedule 40 stainless (316L). Using a 3/32" tungsten, #8 cup, around 90 amps. I'm getting inconsistent root penetration on the bottom half (6 o'clock to 3 o'clock). Top half is laying in perfectly flat and tied in, but fighting gravity on the bottom is causing some suck-back.
+                        </p>
+<p>
+                            Purge is running at 30 CFH. Gap is a tight 1/8", land is feathered to a knife edge. Am I running too hot on the bottom, or is my rod angle (feed) causing the chill?
+                        </p>
+<!-- Embedded Media Frame -->
+<div class="my-md bg-surface border border-outline-variant/30 rounded-DEFAULT p-xs relative group/media">
+<div class="absolute top-2 left-2 bg-background/80 backdrop-blur-sm border border-outline-variant/50 px-2 py-1 rounded-sm font-technical-data text-[10px] text-primary z-10 flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">photo_camera</span> IMG_DATA_01
+                            </div>
+<div class="aspect-video w-full bg-surface-container-highest rounded-sm overflow-hidden relative scanlines">
+<img alt="Weld root macro" class="w-full h-full object-cover opacity-90 mix-blend-luminosity hover:mix-blend-normal transition-all duration-500 cursor-zoom-in" data-alt="A close-up, high-contrast macro photograph of a stainless steel pipe weld joint from the inside, showing the root pass. The environment is dark industrial, lit by stark, cool-toned inspection lights that highlight the ripples and heat-tint (blues and purples) of the metal. The aesthetic is tech-noir and clinical, focusing purely on the engineering details of the metal fusion, with slight blurring at the edges simulating depth of field in a tight space." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDel-6auxDr1y3RW8Sp5rlmkP8uuJ0K63-icGOCRLCxy3E3qb-e-GYgI6gzozRLjI4w191VdLoEd84yhI43lyjwHmiTG1bDTVX1VPu7lbXekg_35hFBQX_9VziC6pm8bAPVIUjgV7t7332Gh_ruCqlC7gonwMPKU6ZemGktFpHX63SdUUA4YbzE2jxSP9GVHRRaiATSoidjPVAOVDTs57VWGAM9iqaVTDpZWiDOGP0uD9oIHZAIKHRUD9_qdNTJs_gL2qZYF4rimJ4"/>
+</div>
+</div>
+</div>
+<!-- Post Footer / Actions -->
+<div class="px-md py-sm bg-surface-container-highest/30 border-t border-outline-variant/20 flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-primary transition-colors font-technical-data text-[12px]">
+<span class="material-symbols-outlined text-[18px]">thumb_up</span> 12
+                            </button>
+<span class="w-px h-4 bg-outline-variant/50"></span>
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-on-surface transition-colors font-technical-data text-[12px]">
+<span class="material-symbols-outlined text-[18px]">forum</span> Reply
+                            </button>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">flag</span>
+</button>
+</div>
+</article>
+<!-- Status Line / Connector -->
+<div class="ml-[30px] w-px h-md bg-outline-variant/30 relative">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-container border border-outline-variant/50 px-2 py-0.5 rounded-full font-technical-data text-[10px] text-on-surface-variant">
+                        ANALYSIS DETECTED
+                    </div>
+</div>
+<!-- Post 2 (Master Welder Reply) -->
+<article class="bg-surface-container-low/80 backdrop-blur-md border border-primary/20 rounded-lg overflow-hidden flex flex-col relative shadow-[0_0_30px_rgba(14,165,233,0.03)]">
+<!-- Accent bar for Master response -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary/80 shadow-[0_0_10px_rgba(137,206,255,0.5)]"></div>
+<div class="bg-surface-container p-sm border-b border-outline-variant/20 flex justify-between items-start pl-md">
+<div class="flex items-center gap-sm">
+<div class="w-12 h-12 rounded-DEFAULT bg-primary/10 border border-primary/50 overflow-hidden relative">
+<div class="absolute inset-0 bg-primary/20 animate-pulse mix-blend-overlay"></div>
+<img alt="Master Avatar" class="w-full h-full object-cover relative z-10 mix-blend-screen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBWPwrrbEl3n4fqoPlYyDKvirIgQIeD-L0LfXlnKPDuBSM1hfwhxx8XszIN4mEeiDIYyPoHaO_Vu0-DcqmcPYvvpYem9nmUW_2Rcpaht0v8PThT-4PzlDXfasFCZHkyll1T0KvsMwr8TYq8dvUcCuIaAgPxu-qQPIocsaEBPINeHobyoWSu9xU2KseOijUMoalbesA5z17VTe8pv38WYTuNyh8uMc6-8iJKCIfvHF1ovGqFCtJq-9PmGnOdOsSMPPPxUO27WTnsG4"/>
+</div>
+<div>
+<div class="flex items-center gap-xs">
+<span class="font-headline-lg-mobile text-[16px] font-bold text-primary drop-shadow-[0_0_5px_rgba(137,206,255,0.4)]">Apex_Fusion</span>
+<span class="inline-flex items-center justify-center bg-primary text-on-primary text-[10px] font-bold px-1 rounded-sm shadow-[0_0_8px_rgba(137,206,255,0.6)]">MASTER</span>
+</div>
+<div class="font-technical-data text-technical-data text-[11px] text-primary/70 mt-0.5">
+                                    SYS_ID: OP-01-003 | CLEARANCE: Lvl 5
+                                </div>
+</div>
+</div>
+<div class="font-technical-data text-technical-data text-[12px] text-on-surface-variant text-right">
+<div class="flex items-center gap-xs justify-end">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                T-MINUS 02:45:10
+                            </div>
+</div>
+</div>
+<div class="p-md text-on-surface font-body-md text-body-md leading-relaxed space-y-md pl-md">
+<div class="bg-surface/50 border-l-2 border-outline-variant/50 pl-md py-xs text-on-surface-variant text-sm italic font-technical-data mb-md">
+                            &gt; "Am I running too hot on the bottom, or is my rod angle (feed) causing the chill?"
+                        </div>
+<p>
+                            It's a combination of both, but primarily your wire feed technique at 6 o'clock. When you're pushing up from the bottom, gravity pulls the puddle. If your gap is 1/8" and knife-edged, 90 amps is slightly hot unless your travel speed is perfectly calibrated.
+                        </p>
+<p>
+<strong>Try this parameter adjustment:</strong> Drop to 82-85 amps. More importantly, don't just lay the wire in the gap. You need to employ a continuous feed, keeping the wire firmly pressed into the leading edge of the puddle to cool it instantly as it bridges the gap. 
+                        </p>
+<div class="grid grid-cols-2 gap-sm mt-sm">
+<div class="bg-surface border border-outline-variant/30 rounded-sm p-sm">
+<div class="font-technical-data text-[10px] text-primary mb-xs uppercase tracking-widest">Parameter Override</div>
+<div class="font-technical-data text-[14px] text-on-surface">Amperage: <span class="text-error">85A MAX</span></div>
+<div class="font-technical-data text-[14px] text-on-surface">Purge: <span class="text-primary">35 CFH</span></div>
+</div>
+<div class="bg-surface border border-outline-variant/30 rounded-sm p-sm flex items-center justify-center relative overflow-hidden group">
+<!-- Minimal abstract representation of the angle -->
+<div class="absolute inset-0 bg-surface-container-highest opacity-50"></div>
+<div class="relative z-10 text-center font-technical-data text-on-surface-variant group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[32px] block mb-1">architecture</span>
+<span class="text-[10px]">VIEW KINEMATIC DIAGRAM</span>
+</div>
+</div>
+</div>
+</div>
+<div class="px-md py-sm bg-surface-container-highest/30 border-t border-outline-variant/20 flex justify-between items-center pl-md">
+<div class="flex items-center gap-sm">
+<button class="flex items-center gap-xs text-primary transition-colors font-technical-data text-[12px] bg-primary/10 px-2 py-1 rounded-sm border border-primary/20 shadow-[0_0_10px_rgba(137,206,255,0.1)]">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">thumb_up</span> 45
+                            </button>
+<span class="font-technical-data text-[10px] text-on-surface-variant uppercase tracking-widest">Master Endorsed Solution</span>
+</div>
+</div>
+</article>
+<!-- Reply Input Box -->
+<div class="mt-lg bg-surface-container border border-outline-variant/40 rounded-lg p-md relative">
+<div class="absolute top-0 left-md -translate-y-1/2 bg-surface px-2 font-technical-data text-[10px] text-primary tracking-widest uppercase">
+                        Input Transmission
+                    </div>
+<textarea class="w-full bg-surface-container-highest border border-outline-variant/30 rounded-sm p-sm text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none min-h-[120px] resize-y placeholder:text-outline-variant/50" placeholder="Enter technical feedback or query..."></textarea>
+<div class="flex justify-between items-center mt-sm">
+<div class="flex gap-xs">
+<button class="w-8 h-8 rounded-sm bg-surface flex items-center justify-center border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-[18px]">attach_file</span>
+</button>
+<button class="w-8 h-8 rounded-sm bg-surface flex items-center justify-center border border-outline-variant/30 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-[18px]">code</span>
+</button>
+</div>
+<button class="bg-primary/10 border border-primary text-primary px-lg py-xs rounded-sm font-label-caps hover:bg-primary hover:text-on-primary transition-all duration-300 shadow-[0_0_15px_rgba(137,206,255,0.2)] hover:shadow-[0_0_20px_rgba(137,206,255,0.5)]">
+                            TRANSMIT
+                        </button>
+</div>
+</div>
+</div> <!-- End Left Column -->
+<!-- Right Column: Sidebar (Desktop Only) -->
+<aside class="w-[320px] hidden xl:flex flex-col gap-lg shrink-0">
+<!-- Thread Stats Widget -->
+<section class="bg-surface-container-low/80 backdrop-blur-sm border border-outline-variant/30 rounded-lg p-md">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-md border-b border-outline-variant/20 pb-xs">TELEMETRY</h3>
+<ul class="space-y-sm font-technical-data text-[12px]">
+<li class="flex justify-between items-center">
+<span class="text-on-surface-variant">Views</span>
+<span class="text-on-surface">1,024</span>
+</li>
+<li class="flex justify-between items-center">
+<span class="text-on-surface-variant">Responses</span>
+<span class="text-on-surface">8</span>
+</li>
+<li class="flex justify-between items-center">
+<span class="text-on-surface-variant">Status</span>
+<span class="text-primary flex items-center gap-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                                ACTIVE
+                            </span>
+</li>
+</ul>
+</section>
+<!-- Top Contributors Widget -->
+<section class="bg-surface-container-low/80 backdrop-blur-sm border border-outline-variant/30 rounded-lg overflow-hidden">
+<div class="bg-surface-container p-sm border-b border-outline-variant/20 flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">military_tech</span>
+<h3 class="font-label-caps text-label-caps text-primary tracking-widest">TOP CONTRIBUTORS</h3>
+</div>
+<div class="p-sm flex flex-col gap-sm">
+<!-- Contributor 1 -->
+<div class="flex items-center gap-sm p-xs rounded-sm hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="relative">
+<div class="w-8 h-8 rounded-sm bg-surface-container-highest border border-primary/50 overflow-hidden shrink-0">
+<img alt="Avatar" class="w-full h-full object-cover mix-blend-screen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_iEls8q52obtejOwT7QkcPccD7ndICn9znaIVPgFVVI3vGOpS79izY9kT8y_b7n9sUFmJrv4HxQ6nd8w2CbZT6Hc5l3BL8jU3ax1LzjPsLS6HIWIVX5fUSBg1kauEuzUvdM4pI61qHkAT4mgEf3yaeATbWsN8iKzO4HS8E-UHofB2eU1kwx8OjEaU56Mf-Be-Zptp68PQoNXL6tqSDM71gzCOyG9Pp8NzSHriuqGH7w1nxqgpyGNGnd5fZQZC8KUm2v2YwwUCK9I"/>
+</div>
+<div class="absolute -bottom-1 -right-1 bg-primary text-on-primary text-[8px] font-bold px-1 rounded-sm z-10">M</div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="font-technical-data text-[12px] text-on-surface truncate group-hover:text-primary transition-colors">Apex_Fusion</div>
+<div class="font-technical-data text-[10px] text-on-surface-variant">Rank: Master</div>
+</div>
+<div class="font-technical-data text-[12px] text-primary">8.2k</div>
+</div>
+<!-- Contributor 2 -->
+<div class="flex items-center gap-sm p-xs rounded-sm hover:bg-surface-container transition-colors cursor-pointer group">
+<div class="w-8 h-8 rounded-sm bg-surface-container-highest border border-outline-variant overflow-hidden shrink-0">
+<img alt="Avatar" class="w-full h-full object-cover mix-blend-screen opacity-70" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJUfzF3n6k4LOrvdc_QD5hqHxeF0f_9OWVj7SGv0a3_R_mPOnHHwzvsT9FKFwPj9T5u-9H4E4AVJ9uSm1yVLmD3RI9AE2Ll4QcC_npMlT7-_Zs2_f3p6x1giIfYCstco9ifG0m89CiH20dicT8O3bzAx33V8YBhB0qo2zYc99NUEYB-Av05MTI9ihhDyXiW2leDePPZsOY0Qk0TjxeHZfbVY5e64kxOCkx-7mtLMn2QHttMPRhR96WAIjkevbjj_2lEtQMdR_i1cA"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="font-technical-data text-[12px] text-on-surface truncate group-hover:text-primary transition-colors">TIG_Spool_99</div>
+<div class="font-technical-data text-[10px] text-on-surface-variant">Rank: Specialist</div>
+</div>
+<div class="font-technical-data text-[12px] text-on-surface-variant">3.4k</div>
+</div>
+</div>
+</section>
+<!-- Related Archive Entries Widget -->
+<section class="bg-surface-container-low/80 backdrop-blur-sm border border-outline-variant/30 rounded-lg overflow-hidden">
+<div class="bg-surface-container p-sm border-b border-outline-variant/20 flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">account_tree</span>
+<h3 class="font-label-caps text-label-caps text-secondary tracking-widest">RELATED ARCHIVES</h3>
+</div>
+<div class="flex flex-col">
+<a class="p-sm border-b border-outline-variant/10 hover:bg-surface-container transition-colors group" href="#">
+<div class="font-technical-data text-[10px] text-on-surface-variant mb-1 flex items-center gap-xs">
+<span class="material-symbols-outlined text-[12px]">folder_open</span> Alloy Selection
+                            </div>
+<div class="font-body-md text-[14px] text-on-surface group-hover:text-primary transition-colors leading-tight">
+                                Purge gas mixtures for high-nickel stainless schedules
+                            </div>
+</a>
+<a class="p-sm hover:bg-surface-container transition-colors group" href="#">
+<div class="font-technical-data text-[10px] text-on-surface-variant mb-1 flex items-center gap-xs">
+<span class="material-symbols-outlined text-[12px]">folder_open</span> Defect Analysis
+                            </div>
+<div class="font-body-md text-[14px] text-on-surface group-hover:text-primary transition-colors leading-tight">
+                                Identifying root causes of "suck-back" in open root joints
+                            </div>
+</a>
+</div>
+</section>
+</aside> <!-- End Right Column -->
+</div>
+</main>
+</body></html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>메인 허브 (최종) - Master-Copy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;family=Geist:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#ffddb8",
+                        "background": "#0b1326",
+                        "on-secondary-container": "#5b3800",
+                        "error-container": "#93000a",
+                        "surface-bright": "#31394d",
+                        "on-surface": "#dae2fd",
+                        "inverse-on-surface": "#283044",
+                        "outline-variant": "#3e4850",
+                        "tertiary-fixed": "#d5e3fd",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-fixed": "#001e2f",
+                        "on-primary-container": "#003751",
+                        "surface-variant": "#2d3449",
+                        "surface-container-low": "#131b2e",
+                        "inverse-primary": "#006591",
+                        "surface-container": "#171f33",
+                        "tertiary-container": "#8e9cb4",
+                        "secondary-fixed-dim": "#ffb95f",
+                        "on-background": "#dae2fd",
+                        "error": "#ffb4ab",
+                        "on-tertiary": "#233144",
+                        "on-secondary-fixed": "#2a1700",
+                        "on-tertiary-fixed": "#0d1c2f",
+                        "surface-dim": "#0b1326",
+                        "primary-container": "#0ea5e9",
+                        "on-surface-variant": "#bec8d2",
+                        "surface-container-highest": "#2d3449",
+                        "on-tertiary-container": "#263447",
+                        "secondary-container": "#ee9800",
+                        "surface-tint": "#89ceff",
+                        "on-primary-fixed-variant": "#004c6e",
+                        "on-secondary": "#472a00",
+                        "inverse-surface": "#dae2fd",
+                        "primary-fixed-dim": "#89ceff",
+                        "primary": "#89ceff",
+                        "surface-container-lowest": "#060e20",
+                        "on-secondary-fixed-variant": "#653e00",
+                        "tertiary-fixed-dim": "#b9c7e0",
+                        "secondary": "#ffb95f",
+                        "on-primary": "#00344d",
+                        "on-error": "#690005",
+                        "surface": "#0b1326",
+                        "surface-container-high": "#222a3d",
+                        "tertiary": "#b9c7e0",
+                        "primary-fixed": "#c9e6ff",
+                        "outline": "#88929b",
+                        "on-tertiary-fixed-variant": "#3a485c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin": "32px",
+                        "xs": "8px",
+                        "lg": "40px",
+                        "base": "4px",
+                        "md": "24px",
+                        "xl": "64px",
+                        "sm": "16px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Geist"],
+                        "headline-lg-mobile": ["Inter"],
+                        "technical-data": ["JetBrains Mono"],
+                        "headline-xl": ["Inter"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "technical-data": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-xl": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "label-caps": ["11px", { "lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .grid-bg {
+            background-image: 
+                linear-gradient(to right, rgba(137, 206, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(137, 206, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .arc-light {
+            position: fixed;
+            top: 20%;
+            left: 10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
+            z-index: -1;
+            pointer-events: none;
+            animation: pulse-arc 8s infinite alternate ease-in-out;
+        }
+
+        .arc-light-2 {
+            position: fixed;
+            bottom: 20%;
+            right: 10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 185, 95, 0.1) 0%, transparent 70%);
+            z-index: -1;
+            pointer-events: none;
+            animation: pulse-arc 12s infinite alternate-reverse ease-in-out;
+        }
+
+        @keyframes pulse-arc {
+            0% { opacity: 0.5; transform: scale(0.9) translate(0, 0); }
+            50% { opacity: 1; transform: scale(1.1) translate(20px, -20px); }
+            100% { opacity: 0.5; transform: scale(0.9) translate(-20px, 20px); }
+        }
+
+        .glass-panel {
+            background: rgba(23, 31, 51, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(137, 206, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .mission-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .mission-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(137, 206, 255, 0.05), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .mission-card:hover {
+            border-color: rgba(14, 165, 233, 0.5);
+            box-shadow: 0 10px 40px rgba(14, 165, 233, 0.2);
+            transform: translateY(-6px);
+            background: rgba(34, 42, 61, 0.7);
+        }
+
+        .mission-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .mission-icon-container {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .mission-card:hover .mission-icon-container {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+        }
+
+        /* Scanline effect for technical feel */
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.1) 50%,
+                rgba(0,0,0,0.1)
+            );
+            background-size: 100% 4px;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative font-body-md text-body-md">
+<!-- Ambient Effects -->
+<div class="grid-bg"></div>
+<div class="arc-light"></div>
+<div class="arc-light-2"></div>
+<div class="scanlines"></div>
+<!-- Top Navigation Anchor (from JSON) -->
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-gutter h-16 bg-surface-container/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-[0_0_15px_rgba(137,206,255,0.1)]">
+<div class="flex items-center gap-md">
+<span class="font-technical-data text-label-caps tracking-widest text-primary-fixed-dim">MASTER-COPY</span>
+<div class="hidden md:flex gap-sm">
+<!-- Suppressed normal nav items as this is a dashboard hub -->
+<span class="text-primary font-bold px-xs py-base bg-primary/10 rounded border border-primary/20 font-technical-data text-technical-data">HUB ACTIVE</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<div class="flex gap-sm text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors duration-300" data-icon="sensors">sensors</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors duration-300" data-icon="notifications">notifications</span>
+</div>
+<div class="h-8 w-8 rounded-full bg-surface-variant border border-outline-variant/50 overflow-hidden flex items-center justify-center relative group cursor-pointer">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="person">person</span>
+<img alt="Chief Engineer Profile" class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A close-up portrait of a technical professional in a high-tech control room setting. The lighting is moody and cinematic, with cool blue screens illuminating their face. The style is hyper-realistic and dramatic, reflecting a tech-noir aesthetic with deep navy shadows and bright cyan highlights. The atmosphere is intense and focused." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCheyg4assdlRlWT5zNah6F9q4yM6iOZG4sc-PNV8Fr2vZALwmKxJ-mOYceMpP2-47Jg69KAkzpZ1hAWOEIzeTiedYXpuV367FsOHewRMFhaG0Wk4UMg6to1qdmoW1f6kWmNR96EJkC6-uOaa62VZvCUrnM6g6d2CssSqXdFMTNyb8QWiWWZXmQ-BNzs61D9ZvCkKpbn6IglojWMyY9vYsyPQpAviQ-pSIL6vdyH1gq9wceOIUg1rsVNVVpGJEVi1sKbJ_FKWyZieY"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center p-gutter lg:p-xl relative z-10 w-full">
+<div class="w-full max-w-7xl mx-auto flex flex-col gap-xl">
+<!-- Header Section -->
+<div class="text-center flex flex-col items-center gap-sm">
+<div class="inline-flex items-center gap-xs px-sm py-base rounded-full bg-surface-container-high/60 border border-outline-variant/40 mb-sm backdrop-blur-md">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_#0ea5e9]"></span>
+<span class="font-technical-data text-label-caps text-on-surface-variant">SYSTEM ONLINE // AWAITING COMMAND</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Select Mission Parameter</h1>
+<p class="text-on-surface-variant max-w-2xl mt-xs font-body-md text-body-md">Initialize operational sequence. All sub-systems operational and standing by for input.</p>
+</div>
+<!-- Bento Grid - Mission Selection -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md md:gap-lg w-full items-stretch">
+<!-- 1. Video Training -->
+<a class="mission-card glass-panel rounded-xl p-lg group" href="#">
+<div class="flex justify-between items-start mb-md">
+<div class="w-20 h-20 rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-center mission-icon-container overflow-hidden">
+<img alt="Video Training Icon" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLuHKC63AXMVi3sMgywUugEk_LhLrXy56UaHhOXYnJRmPEAmvgJw8fK0hVpGME7CfCylfjmqtfJWMN4cP9GpcSyHecz0hAUc_kkwwRtJ_4ZUm_67TTdpY56m-NTy5WaARw7XPCKzZ2FdxjNFLCSM-DYAiAZPtBqF3XlZhabs8NBYpu8Cy6-KzZaurk-fGiXoH2Prd5Pn_4lZJmo1zlaOW60O_lHplNq261zCFHymcAX4ekLnWKgroBEslb4"/>
+</div>
+<span class="font-technical-data text-label-caps text-outline px-xs py-base border border-outline-variant/30 rounded bg-surface-container/50">SEQ-01</span>
+</div>
+<div class="flex-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs group-hover:text-primary transition-colors">Video Training</h2>
+<p class="text-on-surface-variant font-body-md text-body-md">Access the comprehensive visual archive. Standardized procedures and master techniques documented in high fidelity.</p>
+</div>
+<div class="mt-md pt-sm flex items-center text-primary-fixed-dim font-technical-data text-technical-data opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 border-t border-outline-variant/20">
+<span>INITIATE PROTOCOL</span>
+<span class="material-symbols-outlined ml-xs text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</a>
+<!-- 2. Master Chatbot -->
+<a class="mission-card glass-panel rounded-xl p-lg group" href="#">
+<div class="flex justify-between items-start mb-md">
+<div class="w-20 h-20 rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-center mission-icon-container overflow-hidden">
+<img alt="Master Chatbot Icon" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLvMae7pPz-Z3JnhboxvEoYgallXKrURwHnQm8EzdMSXgpCHN_oZ_gMxn0TgDCM5-w4RuK1Rfdvfi4FXX6qnp4Tq2HrfQqnu9qPZPavMX1wG3zhar-C_1ctPnUPuKUHL0_7f7DcurBgJm0d32CoDmm1DmK_dJ3E82dbMYoFVmMOHNvhBkKTiz6ra5WEXzXoHcBda_GRpZoxI07H_cECueBRxMhXwR6ztAxCuonadHKJ0ck0hKuxd0O48KXo"/>
+</div>
+<span class="font-technical-data text-label-caps text-outline px-xs py-base border border-outline-variant/30 rounded bg-surface-container/50 flex items-center gap-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary shadow-[0_0_5px_#ffb95f]"></span>
+                            SEQ-02
+                        </span>
+</div>
+<div class="flex-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs group-hover:text-primary transition-colors">Master Chatbot</h2>
+<p class="text-on-surface-variant font-body-md text-body-md">Engage with the central neural network. Real-time diagnostic assistance and deep knowledge retrieval.</p>
+</div>
+<div class="mt-md pt-sm flex items-center text-primary-fixed-dim font-technical-data text-technical-data opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 border-t border-outline-variant/20">
+<span>ESTABLISH LINK</span>
+<span class="material-symbols-outlined ml-xs text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</a>
+<!-- 3. AI Work Inspection -->
+<a class="mission-card glass-panel rounded-xl p-lg group" href="#">
+<div class="flex justify-between items-start mb-md">
+<div class="w-20 h-20 rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-center mission-icon-container overflow-hidden">
+<img alt="AI Inspection Icon" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLuLHId2VocUY5xVcBL1qskA-Ue89TyvMArScIH_PsHhdsawLjfpaG12YWGDP-QJ500J87X-YymLWm83bimdq_zsEp0NBN_8FKLmsZ7pAj5KC2XzoY1R3C3nXQoESC-8xHTYo4BjLvCXSjtsIk9HX8gC6pTw0Q54H8Fdr8cWUDouAz_qnv3B7TnmqaiZbqj1syOmGjgDPPluIx9d8s00r8ql1YtBYcmkxPWHsBjlFa-iIQu1VS-xpXOWSWw"/>
+</div>
+<span class="font-technical-data text-label-caps text-outline px-xs py-base border border-outline-variant/30 rounded bg-surface-container/50">SEQ-03</span>
+</div>
+<div class="flex-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs group-hover:text-primary transition-colors">AI Inspection</h2>
+<p class="text-on-surface-variant font-body-md text-body-md">Submit telemetry for automated analysis. Computer vision algorithms cross-reference against master tolerances.</p>
+</div>
+<div class="mt-md pt-sm flex items-center text-primary-fixed-dim font-technical-data text-technical-data opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 border-t border-outline-variant/20">
+<span>ENGAGE SENSORS</span>
+<span class="material-symbols-outlined ml-xs text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</a>
+<!-- 4. Community -->
+<a class="mission-card glass-panel rounded-xl p-lg group" href="#">
+<div class="flex justify-between items-start mb-md">
+<div class="w-20 h-20 rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-center justify-center mission-icon-container overflow-hidden">
+<img alt="Operative Network Icon" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLuKd7iA3obPTXccWbPyfjJkc5v_hzHXvpBQcQWvwlUmt_OAna_rMvQI3t0nyorO6KRtGXWG6gdMXBQhO63xWoPS01pN-LTCjT5EFy4k8Wt9iRvW0zdW9epeTX8pveqlJXuKLhmqHpXLpsLHDNRVb29VwujgetyXNzj3ifhA8he8V4f1SRWcBHf_prJ_rvaw5QoPDRMiKPVnSoNbL0t4SfMtUDaG7mcc-z5H6SAejDnMmgj1ypUtEn3TzA"/>
+</div>
+<span class="font-technical-data text-label-caps text-outline px-xs py-base border border-outline-variant/30 rounded bg-surface-container/50">SEQ-04</span>
+</div>
+<div class="flex-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs group-hover:text-primary transition-colors">Operative Network</h2>
+<p class="text-on-surface-variant font-body-md text-body-md">Connect with peer engineers. Exchange tactical data, anomaly reports, and refine operational methodologies.</p>
+</div>
+<div class="mt-md pt-sm flex items-center text-primary-fixed-dim font-technical-data text-technical-data opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 border-t border-outline-variant/20">
+<span>JOIN FREQUENCY</span>
+<span class="material-symbols-outlined ml-xs text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</a>
+</div>
+<!-- Lower decorative technical data -->
+<div class="flex justify-between items-center border-t border-outline-variant/30 pt-sm mt-lg opacity-80">
+<div class="font-technical-data text-label-caps text-on-surface-variant flex gap-md">
+<span>SYS_UPTIME: 99.98%</span>
+<span class="hidden md:inline">LATENCY: 12ms</span>
+</div>
+<div class="font-technical-data text-label-caps text-on-surface-variant">
+<span>ENCRYPTION: AES-256</span>
+</div>
+</div>
+</div>
+</main>
+</body></html>

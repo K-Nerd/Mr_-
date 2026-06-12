@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI 작업 검사 결과 (수정) - Master-Copy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Geist:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error-container": "#ffdad6",
+                      "secondary-container": "#ee9800",
+                      "secondary-fixed": "#ffddb8",
+                      "tertiary-container": "#8e9cb4",
+                      "on-tertiary-fixed": "#0d1c2f",
+                      "on-tertiary-fixed-variant": "#3a485c",
+                      "on-secondary-container": "#5b3800",
+                      "background": "#0b1326",
+                      "surface-container-highest": "#2d3449",
+                      "surface": "#0b1326",
+                      "inverse-primary": "#006591",
+                      "outline-variant": "#3e4850",
+                      "outline": "#88929b",
+                      "error": "#ffb4ab",
+                      "tertiary-fixed": "#d5e3fd",
+                      "on-primary": "#00344d",
+                      "primary-fixed": "#c9e6ff",
+                      "inverse-surface": "#dae2fd",
+                      "on-background": "#dae2fd",
+                      "on-tertiary": "#233144",
+                      "secondary": "#ffb95f",
+                      "on-error": "#690005",
+                      "on-secondary-fixed": "#2a1700",
+                      "tertiary": "#b9c7e0",
+                      "on-tertiary-container": "#263447",
+                      "tertiary-fixed-dim": "#b9c7e0",
+                      "primary": "#89ceff",
+                      "surface-container": "#171f33",
+                      "error-container": "#93000a",
+                      "surface-container-low": "#131b2e",
+                      "surface-container-lowest": "#060e20",
+                      "on-secondary-fixed-variant": "#653e00",
+                      "on-primary-container": "#003751",
+                      "on-surface": "#dae2fd",
+                      "on-surface-variant": "#bec8d2",
+                      "surface-variant": "#2d3449",
+                      "surface-dim": "#0b1326",
+                      "surface-container-high": "#222a3d",
+                      "surface-bright": "#31394d",
+                      "surface-tint": "#89ceff",
+                      "primary-fixed-dim": "#89ceff",
+                      "on-secondary": "#472a00",
+                      "inverse-on-surface": "#283044",
+                      "primary-container": "#0ea5e9",
+                      "secondary-fixed-dim": "#ffb95f",
+                      "on-primary-fixed-variant": "#004c6e",
+                      "on-primary-fixed": "#001e2f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xs": "8px",
+                      "xl": "64px",
+                      "md": "24px",
+                      "lg": "40px",
+                      "gutter": "24px",
+                      "base": "4px",
+                      "margin": "32px",
+                      "sm": "16px"
+              },
+              "fontFamily": {
+                      "technical-data": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg-mobile": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "JetBrains Mono"
+                      ],
+                      "body-md": [
+                              "Geist"
+                      ]
+              },
+              "fontSize": {
+                      "technical-data": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-xl": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.1",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+        }
+        
+        /* Scanline overlay for cockpit feel */
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0),
+                rgba(255, 255, 255, 0) 50%,
+                rgba(0, 0, 0, 0.1) 50%,
+                rgba(0, 0, 0, 0.1)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Subdued Grid Background for main canvas */
+        .bg-grid-pattern {
+            background-image: 
+                linear-gradient(to right, theme('colors.outline-variant') 1px, transparent 1px),
+                linear-gradient(to bottom, theme('colors.outline-variant') 1px, transparent 1px);
+            background-size: 48px 48px;
+            background-color: theme('colors.surface');
+            opacity: 0.15;
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        /* Glass panel style */
+        .glass-panel {
+            background-color: rgba(19, 27, 46, 0.6); /* surface-container-low with opacity */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid theme('colors.outline-variant');
+        }
+        
+        /* Segmented Progress Bar Block */
+        .progress-segment {
+            height: 100%;
+            flex: 1;
+            margin-right: 2px;
+            background-color: theme('colors.surface-bright');
+        }
+        .progress-segment:last-child {
+            margin-right: 0;
+        }
+        .progress-segment.active-error {
+            background-color: theme('colors.error');
+            box-shadow: 0 0 8px theme('colors.error');
+        }
+        .progress-segment.active-secondary {
+            background-color: theme('colors.secondary');
+            box-shadow: 0 0 8px theme('colors.secondary');
+        }
+        
+        /* Custom Checkbox */
+        .tech-checkbox:checked {
+            background-color: theme('colors.primary');
+            border-color: theme('colors.primary');
+            box-shadow: 0 0 10px theme('colors.primary');
+        }
+    </style>
+</head>
+<body class="antialiased overflow-hidden selection:bg-primary selection:text-on-primary">
+<!-- App Container -->
+<div class="flex h-screen w-full relative">
+<!-- SideNavBar (Shared Component) -->
+<!-- Active Tab Intent: "Photo Feedback" -->
+<nav class="fixed left-0 top-0 h-full flex flex-col w-[240px] z-40 transition-all duration-300 bg-surface-container-low/90 backdrop-blur-lg border-r border-outline-variant/20">
+<!-- Header -->
+<div class="flex items-center gap-xs px-md py-lg border-b border-outline-variant/20">
+<span class="material-symbols-outlined text-[32px] text-primary" data-icon="system_update_alt" data-weight="fill" style="font-variation-settings: 'FILL' 1;">system_update_alt</span>
+<div class="flex flex-col">
+<span class="font-headline-lg text-headline-lg text-primary text-[20px] tracking-tight">MC-OPERATOR</span>
+<span class="font-label-caps text-label-caps text-tertiary">V2.4 Active</span>
+</div>
+</div>
+<!-- Primary Tabs -->
+<div class="flex-1 overflow-y-auto py-sm px-xs space-y-1">
+<!-- Dashboard (Inactive) -->
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 hover:bg-surface-variant transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-300" data-icon="dashboard">dashboard</span>
+<span class="font-technical-data text-technical-data">Dashboard</span>
+</a>
+<!-- Training Videos (Inactive) -->
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 hover:bg-surface-variant transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-300" data-icon="play_circle">play_circle</span>
+<span class="font-technical-data text-technical-data">Training Videos</span>
+</a>
+<!-- Master Knowledge (Inactive) -->
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 hover:bg-surface-variant transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-300" data-icon="smart_toy">smart_toy</span>
+<span class="font-technical-data text-technical-data">Master Knowledge</span>
+</a>
+<!-- Photo Feedback (ACTIVE) -->
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-primary border-l-2 border-primary-fixed-dim bg-primary/10 transition-all duration-200 active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="add_a_photo" data-weight="fill" style="font-variation-settings: 'FILL' 1;">add_a_photo</span>
+<span class="font-technical-data text-technical-data font-bold">Photo Feedback</span>
+</a>
+<!-- Knowledge Archive (Inactive) -->
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 hover:bg-surface-variant transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-300" data-icon="inventory_2">inventory_2</span>
+<span class="font-technical-data text-technical-data">Knowledge Archive</span>
+</a>
+<!-- Admin (Inactive) -->
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 hover:bg-surface-variant transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-300" data-icon="admin_panel_settings">admin_panel_settings</span>
+<span class="font-technical-data text-technical-data">Admin</span>
+</a>
+</div>
+<!-- Footer Tabs -->
+<div class="p-xs border-t border-outline-variant/20 space-y-1">
+<!-- Settings -->
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 hover:bg-surface-variant transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-300" data-icon="settings">settings</span>
+<span class="font-technical-data text-technical-data">Settings</span>
+</a>
+<!-- Support -->
+<a class="flex items-center gap-sm px-sm py-xs rounded-DEFAULT text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/40 hover:bg-surface-variant transition-all duration-200 active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-300" data-icon="help">help</span>
+<span class="font-technical-data text-technical-data">Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-[240px] relative h-full flex flex-col z-10 overflow-hidden">
+<!-- Grid Background -->
+<div class="bg-grid-pattern"></div>
+<!-- Top Header (Context) -->
+<header class="h-[88px] flex-shrink-0 border-b border-outline-variant/30 px-gutter flex justify-between items-center bg-surface/80 backdrop-blur-md relative z-20">
+<div class="flex flex-col gap-base">
+<div class="flex items-center gap-sm">
+<span class="font-technical-data text-label-caps text-outline tracking-widest border border-outline-variant/50 px-2 py-1 rounded">REQ-8902</span>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">AI 작업 검사 결과 (수정)</h1>
+</div>
+<span class="font-technical-data text-technical-data text-tertiary flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 2023-10-27 14:32:05 UTC | Node: Alpha-7
+                    </span>
+</div>
+<div class="flex items-center gap-md">
+<!-- Status Chip -->
+<div class="flex items-center gap-xs px-sm py-xs border border-error/50 bg-error/10 rounded shadow-[0_0_15px_rgba(255,180,171,0.2)]">
+<span class="material-symbols-outlined text-error text-[18px]">warning</span>
+<span class="font-label-caps text-label-caps text-error tracking-widest">CRITICAL DEVIATION DETECTED</span>
+</div>
+<!-- Actions -->
+<button class="w-10 h-10 flex items-center justify-center rounded border border-outline-variant text-on-surface hover:border-primary hover:text-primary hover:shadow-[0_0_15px_rgba(137,206,255,0.3)] transition-all bg-surface">
+<span class="material-symbols-outlined">download</span>
+</button>
+<button class="px-sm py-xs h-10 flex items-center gap-xs rounded bg-primary text-on-primary font-technical-data text-technical-data hover:shadow-[0_0_20px_rgba(137,206,255,0.5)] transition-all">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+                        APPROVE PROTOCOL
+                    </button>
+</div>
+</header>
+<!-- Scrollable Content Area -->
+<div class="flex-1 overflow-y-auto p-gutter relative z-20">
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-gutter max-w-[1600px] mx-auto">
+<!-- Main Telemetry Panel (Left, 8 cols) -->
+<div class="col-span-12 lg:col-span-8 glass-panel rounded-lg flex flex-col shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden relative group">
+<!-- Panel Header -->
+<div class="px-md py-sm border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low/80">
+<h2 class="font-technical-data text-technical-data text-primary flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+                                VISUAL TELEMETRY: WELD_JOINT_X99
+                            </h2>
+<div class="flex gap-2">
+<button class="px-2 py-1 border border-primary/40 text-primary font-label-caps text-label-caps rounded bg-primary/10">BBOX</button>
+<button class="px-2 py-1 border border-outline-variant text-on-surface-variant font-label-caps text-label-caps rounded hover:bg-surface-variant/50 transition-colors">HEATMAP</button>
+</div>
+</div>
+<!-- Image Viewer Area -->
+<div class="relative flex-1 bg-surface-container-lowest min-h-[500px] flex items-center justify-center overflow-hidden p-md">
+<!-- Background Grid for Image Area -->
+<div class="absolute inset-0 bg-[linear-gradient(to_right,theme('colors.outline-variant')_1px,transparent_1px),linear-gradient(to_bottom,theme('colors.outline-variant')_1px,transparent_1px)] bg-[size:20px_20px] opacity-10"></div>
+<div class="relative max-w-full max-h-full inline-block border border-outline-variant/40 shadow-2xl">
+<div class="scanlines"></div>
+<!-- The Analyzed Image -->
+<img alt="Industrial weld joint inspection" class="block w-full h-auto object-cover max-h-[600px] opacity-80 mix-blend-luminosity sepia-[.2] hue-rotate-[190deg]" data-alt="A highly detailed, extreme close-up photograph of a heavy industrial steel weld joint under harsh, focused inspection lighting. The metallic surface is dark and textured, showing the ridged pattern of the weld seam running diagonally. The overall aesthetic is gritty, high-contrast, and tech-noir, utilizing deep shadowy blacks, cold steel greys, and intense, localized bright specular highlights. The image implies a rigorous, high-stakes diagnostic environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqg1cJCGefv4QgkwVMUCD2OFwFmscBRong1EZqUA4tE7zBwM6VTK8TwVOSYu_fvy6B9WTaVR7mQsQuToUNsdkcNJay2MrYlM18RjRl1uIzd-jGpnttmx7SihW3Qf3DtxORuags8HKB-tkNcLjZW8WCnr-Svc1szjmXt3b7QhazWIXb3NYE42HDgzlXeI1OsmFXysP_VpShcNoztUXj0ZvQhHmzyVBS14dRWYO8ROLXJ6mXtJ5BMwPYe2Y84cYSDKqtpUdQpoeiwgQ"/>
+<!-- Bounding Box: Porosity (Error/Red) -->
+<div class="absolute top-[35%] left-[45%] w-[12%] h-[15%] border-2 border-error bg-error/10 flex items-start justify-start group/bbox cursor-crosshair">
+<!-- Label -->
+<div class="absolute -top-7 -left-0.5 bg-error text-on-error font-label-caps text-[10px] px-1 py-0.5 whitespace-nowrap flex items-center gap-1 shadow-[0_0_10px_theme('colors.error')]">
+<span class="material-symbols-outlined text-[10px]">bug_report</span>
+                                        POROSITY: 98%
+                                    </div>
+<!-- Corner Accents -->
+<div class="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-error"></div>
+<div class="absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2 border-error"></div>
+</div>
+<!-- Bounding Box: Undercut (Secondary/Orange) -->
+<div class="absolute top-[60%] left-[20%] w-[25%] h-[8%] border-2 border-secondary bg-secondary/10 flex items-start justify-start group/bbox cursor-crosshair">
+<div class="absolute -top-7 -left-0.5 bg-secondary text-on-secondary font-label-caps text-[10px] px-1 py-0.5 whitespace-nowrap flex items-center gap-1 shadow-[0_0_10px_theme('colors.secondary')]">
+<span class="material-symbols-outlined text-[10px]">straighten</span>
+                                        UNDERCUT: 87%
+                                    </div>
+<div class="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-secondary"></div>
+<div class="absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2 border-secondary"></div>
+</div>
+<!-- Reticle Center -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 pointer-events-none opacity-50">
+<div class="absolute top-0 left-1/2 w-[1px] h-3 bg-primary -translate-x-1/2"></div>
+<div class="absolute bottom-0 left-1/2 w-[1px] h-3 bg-primary -translate-x-1/2"></div>
+<div class="absolute left-0 top-1/2 w-3 h-[1px] bg-primary -translate-y-1/2"></div>
+<div class="absolute right-0 top-1/2 w-3 h-[1px] bg-primary -translate-y-1/2"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column (4 cols) -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-gutter">
+<!-- Panel 2: Defect Diagnosis Chart -->
+<div class="glass-panel rounded-lg flex flex-col shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+<div class="px-md py-sm border-b border-outline-variant/30 flex items-center gap-xs bg-surface-container-low/80">
+<span class="material-symbols-outlined text-[18px] text-primary">bar_chart</span>
+<h3 class="font-technical-data text-technical-data text-primary">CONFIDENCE MATRIX</h3>
+</div>
+<div class="p-md space-y-lg">
+<!-- Data Row: Porosity -->
+<div class="space-y-xs">
+<div class="flex justify-between items-end">
+<span class="font-technical-data text-technical-data text-error uppercase tracking-wider flex items-center gap-xs">
+<span class="w-2 h-2 bg-error rounded-full shadow-[0_0_5px_theme('colors.error')]"></span>
+                                            Porosity
+                                        </span>
+<span class="font-technical-data text-technical-data text-error">98.4%</span>
+</div>
+<!-- Segmented Bar -->
+<div class="h-2 w-full flex bg-surface-container-highest p-[1px] border border-outline-variant/20">
+<div class="progress-segment active-error"></div><div class="progress-segment active-error"></div><div class="progress-segment active-error"></div><div class="progress-segment active-error"></div><div class="progress-segment active-error"></div><div class="progress-segment active-error"></div><div class="progress-segment active-error"></div><div class="progress-segment active-error"></div><div class="progress-segment active-error"></div><div class="progress-segment"></div>
+</div>
+</div>
+<!-- Data Row: Undercut -->
+<div class="space-y-xs">
+<div class="flex justify-between items-end">
+<span class="font-technical-data text-technical-data text-secondary uppercase tracking-wider flex items-center gap-xs">
+<span class="w-2 h-2 bg-secondary rounded-full shadow-[0_0_5px_theme('colors.secondary')]"></span>
+                                            Undercut
+                                        </span>
+<span class="font-technical-data text-technical-data text-secondary">87.1%</span>
+</div>
+<div class="h-2 w-full flex bg-surface-container-highest p-[1px] border border-outline-variant/20">
+<div class="progress-segment active-secondary"></div><div class="progress-segment active-secondary"></div><div class="progress-segment active-secondary"></div><div class="progress-segment active-secondary"></div><div class="progress-segment active-secondary"></div><div class="progress-segment active-secondary"></div><div class="progress-segment active-secondary"></div><div class="progress-segment active-secondary"></div><div class="progress-segment"></div><div class="progress-segment"></div>
+</div>
+</div>
+<!-- Data Row: Slag Inclusion -->
+<div class="space-y-xs">
+<div class="flex justify-between items-end">
+<span class="font-technical-data text-technical-data text-on-surface-variant uppercase tracking-wider flex items-center gap-xs">
+<span class="w-2 h-2 bg-outline-variant rounded-full"></span>
+                                            Slag Inclusion
+                                        </span>
+<span class="font-technical-data text-technical-data text-on-surface-variant">12.0%</span>
+</div>
+<div class="h-2 w-full flex bg-surface-container-highest p-[1px] border border-outline-variant/20">
+<div class="progress-segment bg-outline-variant"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Panel 3: Corrective Action Protocol -->
+<div class="glass-panel rounded-lg flex flex-col flex-1 shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+<div class="px-md py-sm border-b border-outline-variant/30 flex items-center gap-xs bg-surface-container-low/80">
+<span class="material-symbols-outlined text-[18px] text-primary">fact_check</span>
+<h3 class="font-technical-data text-technical-data text-primary">ACTION PROTOCOL</h3>
+</div>
+<div class="p-md space-y-sm overflow-y-auto">
+<p class="font-body-md text-body-md text-on-surface-variant mb-md text-sm border-l-2 border-error pl-sm">
+                                    Mandatory rework required. Follow protocol sequence precisely to clear deviation status.
+                                </p>
+<!-- Checklist Items -->
+<label class="flex items-start gap-sm p-sm rounded border border-outline-variant/30 bg-surface-container/30 hover:border-primary/50 transition-colors cursor-pointer group">
+<input class="tech-checkbox w-5 h-5 mt-0.5 rounded-sm bg-surface-container-highest border-outline focus:ring-primary focus:ring-offset-surface shrink-0" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-technical-data text-technical-data text-on-surface group-hover:text-primary transition-colors">Isolate segment 0.5m</span>
+<span class="font-body-md text-[12px] text-on-surface-variant mt-1">Mark physical bounds around defect zones.</span>
+</div>
+</label>
+<label class="flex items-start gap-sm p-sm rounded border border-outline-variant/30 bg-surface-container/30 hover:border-primary/50 transition-colors cursor-pointer group">
+<input class="tech-checkbox w-5 h-5 mt-0.5 rounded-sm bg-surface-container-highest border-outline focus:ring-primary focus:ring-offset-surface shrink-0" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-technical-data text-technical-data text-on-surface group-hover:text-primary transition-colors">Grind out porosity</span>
+<span class="font-body-md text-[12px] text-on-surface-variant mt-1">Remove defective material to base metal depth.</span>
+</div>
+</label>
+<label class="flex items-start gap-sm p-sm rounded border border-outline-variant/30 bg-surface-container/30 hover:border-primary/50 transition-colors cursor-pointer group">
+<input class="tech-checkbox w-5 h-5 mt-0.5 rounded-sm bg-surface-container-highest border-outline focus:ring-primary focus:ring-offset-surface shrink-0" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-technical-data text-technical-data text-on-surface group-hover:text-primary transition-colors">Re-weld &amp; Profiling</span>
+<span class="font-body-md text-[12px] text-on-surface-variant mt-1">Apply corrective pass and blend to contour.</span>
+</div>
+</label>
+<label class="flex items-start gap-sm p-sm rounded border border-outline-variant/30 bg-surface-container/30 hover:border-primary/50 transition-colors cursor-pointer group">
+<input class="tech-checkbox w-5 h-5 mt-0.5 rounded-sm bg-surface-container-highest border-outline focus:ring-primary focus:ring-offset-surface shrink-0" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-technical-data text-technical-data text-on-surface group-hover:text-primary transition-colors">Secondary NDT Scan</span>
+<span class="font-body-md text-[12px] text-on-surface-variant mt-1">Submit new telemetry for AI verification.</span>
+</div>
+</label>
+</div>
+<!-- Sign off area -->
+<div class="mt-auto p-sm border-t border-outline-variant/30 bg-surface-container-lowest/50 flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-tertiary">OPERATOR SIGNATURE REQUIRED</span>
+<div class="w-32 h-8 border-b border-dashed border-outline-variant"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom spacer -->
+<div class="h-xl"></div>
+</div>
+</main>
+</div>
+</body></html>

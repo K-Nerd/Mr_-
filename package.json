@@ -1,0 +1,15 @@
+{
+  "name": "master-copy-final-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix apps/web run dev --",
+    "dev:web": "npm --prefix apps/web run dev --",
+    "setup:web": "npm --prefix apps/web install --no-audit --no-fund",
+    "build:web": "npm --prefix apps/web run build",
+    "lint:web": "npm --prefix apps/web run lint",
+    "setup:api": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-api.ps1",
+    "dev:api": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-api.ps1",
+    "check:api": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-api.ps1"
+  }
+}

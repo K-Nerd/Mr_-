@@ -1,0 +1,9 @@
+# Optional vector-search stack.
+# The current backend runs without these packages by using local JSON/Markdown
+# retrieval. Install this file only when you want to restore Chroma/embedding
+# based retrieval experiments.
+
+chromadb>=0.5.0
+sentence-transformers>=3.0.0
+torch>=2.1.0
+numpy>=1.26.0

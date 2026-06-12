@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.chrome-debug/
+out/
+*.log
+*.tsbuildinfo
+ui-check*.png
+.env*
+!.env.example
