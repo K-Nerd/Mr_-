@@ -15,21 +15,110 @@ import type {
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:8000";
 
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...init?.headers,
-    },
-  });
+const ENABLE_API_CONSOLE_LOGS =
+  typeof window !== "undefined" && process.env.NODE_ENV !== "production";
 
-  if (!response.ok) {
-    const message = await response.text().catch(() => "");
-    throw new Error(`${response.status} ${response.statusText}${message ? `: ${message}` : ""}`);
+function previewRequestBody(body: BodyInit | null | undefined) {
+  if (!body) return undefined;
+  if (body instanceof FormData) {
+    return Array.from(body.entries()).map(([key, value]) => ({
+      key,
+      value: value instanceof File
+        ? { name: value.name, size: value.size, type: value.type || "unknown" }
+        : value,
+    }));
   }
+  if (typeof body === "string") {
+    try {
+      return JSON.parse(body);
+    } catch {
+      return body;
+    }
+  }
+  return "[non-json body]";
+}
 
-  return response.json() as Promise<T>;
+function logApiCall(input: {
+  path: string;
+  method: string;
+  url: string;
+  status?: number;
+  durationMs: number;
+  requestBody?: unknown;
+  responseBody?: unknown;
+  error?: unknown;
+}) {
+  if (!ENABLE_API_CONSOLE_LOGS) return;
+
+  const statusLabel = input.status ? ` ${input.status}` : "";
+  const label = `[FastAPI] ${input.method} ${input.path}${statusLabel} (${input.durationMs}ms)`;
+  const logger = input.error ? console.error : console.info;
+
+  console.groupCollapsed(label);
+  logger("url", input.url);
+  if (input.requestBody !== undefined) logger("request", input.requestBody);
+  if (input.responseBody !== undefined) logger("response", input.responseBody);
+  if (input.error !== undefined) logger("error", input.error);
+  console.groupEnd();
+}
+
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = init?.method || "GET";
+  const url = `${API_BASE_URL}${path}`;
+  const requestBody = previewRequestBody(init?.body);
+  const startedAt = performance.now();
+  let logged = false;
+
+  try {
+    const response = await fetch(url, {
+      ...init,
+      headers: {
+        ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+        ...init?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const message = await response.text().catch(() => "");
+      const error = new Error(`${response.status} ${response.statusText}${message ? `: ${message}` : ""}`);
+      logApiCall({
+        path,
+        method,
+        url,
+        status: response.status,
+        durationMs: Math.round(performance.now() - startedAt),
+        requestBody,
+        responseBody: message,
+        error,
+      });
+      logged = true;
+      throw error;
+    }
+
+    const payload = await response.json() as T;
+    logApiCall({
+      path,
+      method,
+      url,
+      status: response.status,
+      durationMs: Math.round(performance.now() - startedAt),
+      requestBody,
+      responseBody: payload,
+    });
+    return payload;
+  } catch (error) {
+    if (!logged) {
+      logApiCall({
+        path,
+        method,
+        url,
+        durationMs: Math.round(performance.now() - startedAt),
+        requestBody,
+        error,
+      });
+    }
+    throw error;
+  }
 }
 
 export async function getHealth(): Promise<{ status: string }> {
