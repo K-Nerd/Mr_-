@@ -1,13 +1,8 @@
 {
-  "description": "파이프 TIG 용접 RAG 데이터셋의 영상 출처 인덱스. RAG 응답 시 인용 근거(citation)로 사용. video 필드는 항상 dataset/ 기준 로컬 경로이다. 로컬 파일이 없는 엔트리는 본 인덱스에 포함하지 않는다.",
+  "description": "Pipe TIG welding video source index used by the RAG API for citations and by the frontend for video browsing.",
   "schema_version": "2.0",
-  "path_convention": "video 필드 값은 항상 'video/'로 시작하는 dataset/ 기준 상대 경로(로컬 파일)이다.",
-  "missing_videos": [
-    "carbon_steel 1G — 영상 미수집",
-    "stainless 5G — 영상 미수집",
-    "aluminum 6G — 영상 미수집",
-    "posture 6G #03 기본자세 — 영상 미수집"
-  ],
+  "path_convention": "The video field is a dataset-relative path and should start with video/.",
+  "missing_videos": [],
   "sources": [
     {
       "id": "video_cs_2g",
@@ -22,7 +17,7 @@
       "kind": "video",
       "material": "carbon_steel",
       "position": "5G",
-      "title": "Tig welding pipe. 5G ROOT PASS with cup walking and LAY WIRE technique. 32a SCH40",
+      "title": "5G root pass TIG welding with cup walking and lay wire technique",
       "video": "video/carbon steel 5G pipe TIG welding.mp4"
     },
     {
@@ -30,7 +25,7 @@
       "kind": "video",
       "material": "carbon_steel",
       "position": "6G",
-      "title": "TIG welding Walking The Cup pipe welding (2 1/2 inch SCH80 carbon steel pipe)",
+      "title": "TIG welding walking the cup on carbon steel pipe",
       "video": "video/carbon steel 6G pipe TIG welding.mp4"
     },
     {
@@ -38,7 +33,7 @@
       "kind": "video",
       "material": "stainless",
       "position": "1G",
-      "title": "Stainless steel 1G TIG root pass (lay wire)",
+      "title": "Stainless steel 1G TIG root pass",
       "video": "video/stainless steel 1G pipe TIG welding.mp4"
     },
     {
@@ -46,7 +41,7 @@
       "kind": "video",
       "material": "stainless",
       "position": "2G",
-      "title": "TIG Welding Stainless Pipe / 2G Horizontal Root Pass Keyhole Technique 100A SCH10 Walking The Cup",
+      "title": "Stainless pipe 2G horizontal root pass keyhole technique",
       "video": "video/stainless steel 2G pipe TIG welding.mp4"
     },
     {
@@ -54,7 +49,7 @@
       "kind": "video",
       "material": "stainless",
       "position": "6G",
-      "title": "6인치 스테인리스 파이프 TIG 용접 과정",
+      "title": "6 inch stainless pipe TIG welding process",
       "video": "video/stainless steel 6G pipe TIG welding.mp4"
     },
     {
@@ -70,7 +65,7 @@
       "kind": "video",
       "material": "aluminum",
       "position": "2G",
-      "title": "TIG Welding 2G Pipe (Aluminum, Everlast PowerTIG 200DV)",
+      "title": "Aluminum pipe 2G TIG welding",
       "video": "video/aluminum 2G pipe TIG welding.mp4"
     },
     {
@@ -78,7 +73,7 @@
       "kind": "video",
       "material": "aluminum",
       "position": "5G",
-      "title": "TIG welding pipe tight root Lay Wire / 5G narrow gap (aluminum)",
+      "title": "Aluminum 5G narrow gap TIG welding",
       "video": "video/aluminum 5G pipe TIG welding.mp4"
     },
     {
@@ -86,8 +81,8 @@
       "kind": "video",
       "material": "aluminum",
       "topic": "back_weld",
-      "title": "알루미늄 백(이면) 용접 영상",
-      "video": "video/알루미늄-백-용접-영상.mp4"
+      "title": "Aluminum back weld training video",
+      "video": "video/aluminum back weld training.mp4"
     },
     {
       "id": "video_posture_height",
@@ -95,8 +90,8 @@
       "topic": "posture",
       "position": "6G",
       "subtopic": "height_setup",
-      "title": "#02 TIG용접 6G 시럼이란? / 모재높이설정",
-      "video": "video/02-6G-시럼이란-모재높이설정.mp4"
+      "title": "6G posture setup: pipe and base-metal height",
+      "video": "video/02-6G-height-setup.mp4"
     },
     {
       "id": "video_posture_gaze",
@@ -104,8 +99,8 @@
       "topic": "posture",
       "position": "6G",
       "subtopic": "gaze_balance",
-      "title": "#04 6G 시선처리/무게중심/호흡",
-      "video": "video/04-6G-시선처리-무게중심-호흡.mp4"
+      "title": "6G posture: gaze handling and balance",
+      "video": "video/04-6G-gaze-balance.mp4"
     },
     {
       "id": "video_posture_low",
@@ -113,8 +108,8 @@
       "topic": "posture",
       "position": "6G",
       "subtopic": "low_stance",
-      "title": "#05 6G 최종자세1(낮은자세)",
-      "video": "video/6G-최종자세1-낮은자세.mp4"
+      "title": "6G final low stance",
+      "video": "video/6G-final-low-stance.mp4"
     },
     {
       "id": "video_posture_high",
@@ -122,8 +117,8 @@
       "topic": "posture",
       "position": "6G",
       "subtopic": "high_stance",
-      "title": "#06 6G 최종자세2(높은자세)",
-      "video": "video/6G최종자세2-높은자세.mp4"
+      "title": "6G final high stance",
+      "video": "video/6G-final-high-stance.mp4"
     }
   ]
 }

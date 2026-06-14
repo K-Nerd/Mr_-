@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -59,7 +60,8 @@ API_KEY_ENVS = (GROQ_ENV,) + GEMINI_ENVS + VERTEX_PROJECT_ENVS
 
 def _looks_like_gemini_key(v: str) -> bool:
     """진짜 Gemini API 키만 통과시킴 (프로젝트 ID 같은 거 걸러냄)."""
-    return v.startswith("AIzaSy") and len(v) >= 30
+    value = v.strip()
+    return (value.startswith("AIzaSy") or value.startswith("AQ.")) and len(value) >= 30
 
 
 def _resolve_provider() -> tuple[str | None, str, str | None, str]:
@@ -108,15 +110,20 @@ def _get_model() -> str:
     return model
 
 
-SYSTEM_PROMPT = """당신은 파이프 TIG 용접 챗봇이다. 은퇴한 숙련 용접공의 관점에서 신입에게 가르치듯 답한다.
+SYSTEM_PROMPT = """당신은 파이프 TIG 용접 현장 코치입니다.
+사용자의 질문에 대해 제공된 <context> 안의 노하우만 근거로 답하세요.
 
-규칙:
-- 반드시 제공된 <context> 안의 정보만 사용해 답한다. 추측·일반론·교과서 지식 금지.
-- 컨텍스트에 답이 없으면 "제공된 자료에서 확인할 수 없습니다"라고 말한다.
-- 재질(탄소강/스테인리스/알루미늄)과 자세(1G/2G/5G/6G)를 명확히 구분해서 답한다.
-- 숫자(전류, 가스 LPM, 갭, 각도)는 컨텍스트의 값을 그대로 인용한다.
-- 답은 한국어로, 3~6문장 또는 핵심 bullet 4~6개 이내로 간결하게.
-- 마지막에 어떤 청크 id를 근거로 했는지 `근거: [id1, id2]` 형태로 한 줄 표기.
+응답 규칙:
+- 한국어로 답합니다.
+- 말투는 친절하고 실무적인 존댓말을 씁니다. "신입", "~하네", "~하게" 같은 훈계식 말투는 쓰지 않습니다.
+- 내부 chunk id, entry id, source id는 절대 답변 본문에 쓰지 않습니다.
+- 모르는 내용은 추측하지 말고 "제공된 노하우에서는 확인되지 않습니다"라고 말합니다.
+- 전류, 가스 유량, 각도, 간격 같은 숫자는 context에 있는 값만 그대로 씁니다.
+- 답변은 너무 짧게 끝내지 말고 현장에서 바로 쓸 수 있게 설명합니다.
+- 형식은 "요약", "먼저 확인할 것", "조정 방법", "주의할 점" 순서로 구성합니다.
+- 각 항목은 1~3문장으로 씁니다. 전체 답변은 보통 6~10문장 정도로 충분히 설명합니다.
+- bullet은 4~7개 정도 사용하되, 같은 말을 반복하지 않습니다.
+- 답변 마지막에 출처, 근거, 내부 ID 표기 문장을 따로 붙이지 않습니다. 근거와 영상은 화면 카드에서 보여줍니다.
 """
 
 
@@ -131,7 +138,7 @@ class Answer:
 def _format_context(hits: list[Hit]) -> str:
     blocks: list[str] = []
     for i, h in enumerate(hits, 1):
-        head = f"[{i}] id={h.id} | {h.material}/{h.position}/{h.type}"
+        head = f"[{i}] {h.material}/{h.position}/{h.type}"
         if h.stage:
             head += f" · {h.stage}"
         if h.defect:
@@ -140,30 +147,93 @@ def _format_context(hits: list[Hit]) -> str:
     return "\n\n---\n\n".join(blocks)
 
 
+def _friendly_material(material: str | None) -> str:
+    return {
+        "carbon_steel": "탄소강",
+        "stainless": "스테인리스",
+        "aluminum": "알루미늄",
+    }.get(material or "", "선택한 재질")
+
+
+def _clean_hit_text(text: str) -> str:
+    compact = " ".join(text.split())
+    compact = re.sub(r"^\[[^\]]+\]\s*", "", compact)
+    compact = re.sub(r"^root_pass\s+", "루트패스: ", compact)
+    compact = re.sub(r"^fill_cap\s+", "필러/캡패스: ", compact)
+    compact = re.sub(r"^hot_pass\s+", "핫패스: ", compact)
+    compact = re.sub(r"^posture\s+", "자세: ", compact)
+    compact = compact.replace("Q:", "질문:").replace("A:", "답:").strip()
+    return compact
+
+
+def _needs_more_detail(text: str) -> bool:
+    compact = re.sub(r"\s+", "", text or "")
+    bullet_count = len(re.findall(r"(?m)^\s*(?:[-*]|\d+[.)])\s+", text or ""))
+    return len(compact) < 220 or bullet_count < 3
+
+
+def _expand_short_answer(text: str, hits: list[Hit]) -> str:
+    """LLM 답변이 너무 짧으면 검색된 노하우로 사용자용 설명을 보강한다."""
+    seen: set[str] = set()
+    points: list[str] = []
+    for hit in hits:
+        point = _clean_hit_text(hit.text)
+        point = re.sub(r"\[[^\]]+\]\s*", "", point).strip()
+        if not point or point in seen:
+            continue
+        seen.add(point)
+        points.append(point)
+        if len(points) >= 5:
+            break
+
+    if not points:
+        return text.strip()
+
+    lines = [text.strip(), "", "먼저 확인할 것:"]
+    for point in points[:3]:
+        lines.append(f"- {point}")
+
+    if len(points) > 3:
+        lines.extend(["", "조정 방법:"])
+        for point in points[3:5]:
+            lines.append(f"- {point}")
+
+    lines.extend([
+        "",
+        "주의할 점:",
+        "- 위 내용은 현재 선택된 재질/자세와 연결된 노하우 기준입니다. 화면의 추천 영상에서 같은 구간을 같이 확인하면 원인을 더 빨리 좁힐 수 있습니다.",
+    ])
+    return "\n".join(lines)
+
+
 def _local_answer(query: str, hits: list[Hit], decision: RouteDecision, reason: str) -> str:
     if not hits:
         return (
-            "Local RAG fallback: no matching knowhow chunk was found. "
-            "Check the material/position wording or add more dataset entries."
+            "지금 선택한 조건에서 바로 참고할 노하우를 찾지 못했습니다.\n\n"
+            "- 재질과 자세가 맞게 선택되어 있는지 먼저 확인하세요.\n"
+            "- 질문에 재질, 자세, 공정 단계(루트/핫/캡)를 함께 적으면 더 잘 찾습니다.\n"
+            "- 숙련공 입력 화면에서 해당 조건의 노하우를 추가하면 다음 질문부터 반영됩니다."
         )
 
-    lines = [
-        f"Local RAG fallback ({reason}).",
-        f"Routing: material={decision.material or 'auto'}, position={decision.position or 'auto'}.",
-        f"Question: {query}",
-        "Use these master-knowhow points first:",
-    ]
-    for hit in hits[:4]:
-        compact = " ".join(hit.text.split())
-        lines.append(f"- [{hit.id}] {compact[:260]}")
+    material = _friendly_material(decision.material)
+    position = decision.position or "선택한 자세"
+    stage_hits = [hit for hit in hits if hit.stage]
+    main_hits = stage_hits or hits
 
-    source_ids: list[str] = []
-    for hit in hits:
-        for source_id in hit.source_ids:
-            if source_id not in source_ids:
-                source_ids.append(source_id)
-    if source_ids:
-        lines.append(f"Sources: {', '.join(source_ids[:6])}")
+    lines = [
+        f"{material} {position} 기준으로 보면, 먼저 아래 순서로 확인하세요.",
+        "",
+    ]
+    for index, hit in enumerate(main_hits[:4], 1):
+        lines.append(f"{index}. {_clean_hit_text(hit.text)}")
+
+    resolved = citations.for_hits(hits)
+    available = [citation for citation in resolved if citations.video_exists(citation)]
+    if available:
+        lines.extend(["", "근거 영상:", *[f"- {citation.title}" for citation in available[:3]]])
+
+    if reason:
+        lines.extend(["", "참고: 현재 외부 LLM이 연결되지 않아 로컬 RAG 데이터 기준으로 답변했습니다."])
     return "\n".join(lines)
 
 
@@ -213,6 +283,8 @@ def answer(query: str, k: int = MAX_RAG_HITS, dry_run: bool = False) -> Answer:
         text = _call_vertex(SYSTEM_PROMPT, user_msg, api_key, _get_vertex_location(), model)
     else:
         text = _call_gemini(SYSTEM_PROMPT, user_msg, api_key, model)
+    if _needs_more_detail(text):
+        text = _expand_short_answer(text, merged)
     return Answer(text=text, hits=merged, decision=decision, citations_md=cits_md)
 
 
@@ -252,7 +324,7 @@ def _call_gemini(system: str, user: str, api_key: str, model: str) -> str:
             contents=user,
             config=types.GenerateContentConfig(
                 system_instruction=system,
-                max_output_tokens=1024,
+                max_output_tokens=1536,
                 temperature=0.2,
             ),
         )
@@ -276,7 +348,7 @@ def _call_vertex(system: str, user: str, project: str, location: str, model: str
             contents=user,
             config=types.GenerateContentConfig(
                 system_instruction=system,
-                max_output_tokens=1024,
+                max_output_tokens=1536,
                 temperature=0.2,
             ),
         )

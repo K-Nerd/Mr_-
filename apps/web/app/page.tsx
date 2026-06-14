@@ -1,11 +1,8 @@
 "use client";
 
-import type { ChangeEvent, FormEvent, ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import type { ChangeEvent, CSSProperties, FormEvent, PointerEvent, ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  API_BASE_URL,
-  getBackendLogs,
-  getHealth,
   getKnowhow,
   getMaterials,
   getPositions,
@@ -21,7 +18,6 @@ import {
 import type {
   AnswerHit,
   AnswerResponse,
-  BackendLogEntry,
   ArchiveItem,
   ChatMessage,
   ContextFilters,
@@ -196,7 +192,6 @@ export default function Home() {
   });
   const [materials, setMaterials] = useState<MaterialKey[]>(FALLBACK_MATERIALS);
   const [positions, setPositions] = useState<Position[]>(FALLBACK_POSITIONS);
-  const [apiStatus, setApiStatus] = useState<"checking" | "online" | "offline">("checking");
   const [videos, setVideos] = useState<TrainingVideo[]>(fallbackVideos(filters));
   const [sources, setSources] = useState<SourceVideo[]>([]);
   const [knowhow, setKnowhow] = useState<KnowhowResponse | null>(fallbackKnowhow(filters));
@@ -204,7 +199,8 @@ export default function Home() {
   const [selectedArchive, setSelectedArchive] = useState<ArchiveItem | null>(null);
   const [loadingData, setLoadingData] = useState(false);
   const [dataError, setDataError] = useState("");
-  const [backendLogs, setBackendLogs] = useState<BackendLogEntry[]>([]);
+  const [drawerWidth, setDrawerWidth] = useState(340);
+  const [chatLogHeight, setChatLogHeight] = useState(470);
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
@@ -239,20 +235,47 @@ export default function Home() {
     source: "demo_stainless_6g_root",
   });
 
+  const startDrawerResize = (event: PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = drawerWidth;
+
+    const onMove = (moveEvent: globalThis.PointerEvent) => {
+      const nextWidth = startWidth - (moveEvent.clientX - startX);
+      setDrawerWidth(Math.min(520, Math.max(260, nextWidth)));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const startChatResize = (event: PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const startY = event.clientY;
+    const startHeight = chatLogHeight;
+
+    const onMove = (moveEvent: globalThis.PointerEvent) => {
+      const nextHeight = startHeight + (moveEvent.clientY - startY);
+      const maxHeight = Math.max(900, window.innerHeight * 1.45);
+      setChatLogHeight(Math.min(maxHeight, Math.max(180, nextHeight)));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
   useEffect(() => {
     let alive = true;
 
     async function loadBase() {
-      setApiStatus("checking");
-      try {
-        await getHealth();
-        if (!alive) return;
-        setApiStatus("online");
-      } catch {
-        if (!alive) return;
-        setApiStatus("offline");
-      }
-
       try {
         const [nextMaterials, nextPositions, nextSources] = await Promise.all([
           getMaterials(),
@@ -274,26 +297,6 @@ export default function Home() {
     loadBase();
     return () => {
       alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-
-    async function loadLogs() {
-      try {
-        const nextLogs = await getBackendLogs();
-        if (alive) setBackendLogs(nextLogs);
-      } catch {
-        if (alive) setBackendLogs([]);
-      }
-    }
-
-    loadLogs();
-    const timer = window.setInterval(loadLogs, 2000);
-    return () => {
-      alive = false;
-      window.clearInterval(timer);
     };
   }, []);
 
@@ -512,7 +515,6 @@ export default function Home() {
             filters={filters}
             videos={videos}
             archiveItems={archiveItems}
-            apiStatus={apiStatus}
             loading={loadingData}
             onNavigate={goTo}
             onOpenVideo={openVideo}
@@ -547,7 +549,8 @@ export default function Home() {
             input={chatInput}
             loading={chatLoading}
             filters={filters}
-            backendLogs={backendLogs}
+            chatLogHeight={chatLogHeight}
+            onStartResize={startChatResize}
             onInput={setChatInput}
             onSubmit={submitChat}
           />
@@ -595,25 +598,24 @@ export default function Home() {
 
   return (
     <div className="mc-app">
-      <Sidebar page={page} apiStatus={apiStatus} onNavigate={goTo} />
+      <Sidebar page={page} onNavigate={goTo} />
       <div className="mc-main">
         <Topbar
           page={page}
           filters={filters}
           materials={materials}
           positions={positions}
-          apiStatus={apiStatus}
           onFilter={changeFilter}
         />
-        <div className="mc-content">
+        <div className="mc-content" style={{ "--drawer-width": `${drawerWidth}px` } as CSSProperties}>
           <main className="mc-workspace">{renderMain()}</main>
+          <div className="layout-resizer" role="separator" aria-label="요약 패널 너비 조절" onPointerDown={startDrawerResize} />
           <InsightDrawer
             page={page}
             filters={filters}
             videos={videos}
             citations={drawerCitations}
             knowhow={knowhow}
-            apiStatus={apiStatus}
             photoFeedback={photoFeedback}
           />
         </div>
@@ -624,11 +626,9 @@ export default function Home() {
 
 function Sidebar({
   page,
-  apiStatus,
   onNavigate,
 }: {
   page: PageKey;
-  apiStatus: "checking" | "online" | "offline";
   onNavigate: (page: PageKey) => void;
 }) {
   return (
@@ -639,11 +639,6 @@ function Sidebar({
           <strong>{BRAND}</strong>
           <span>숙련공 노하우 시스템</span>
         </div>
-      </div>
-
-      <div className="status-strip">
-        <span className={`status-dot ${apiStatus}`} />
-        <span>{apiStatus === "online" ? "API 연결됨" : apiStatus === "offline" ? "데모 모드" : "API 확인 중"}</span>
       </div>
 
       <nav className="nav-list" aria-label="주요 메뉴">
@@ -682,14 +677,12 @@ function Topbar({
   filters,
   materials,
   positions,
-  apiStatus,
   onFilter,
 }: {
   page: PageKey;
   filters: ContextFilters;
   materials: MaterialKey[];
   positions: Position[];
-  apiStatus: "checking" | "online" | "offline";
   onFilter: <K extends keyof ContextFilters>(key: K, value: ContextFilters[K]) => void;
 }) {
   return (
@@ -729,7 +722,6 @@ function Topbar({
             ))}
           </select>
         </label>
-        <span className={`api-pill ${apiStatus}`}>{apiStatus === "online" ? "API 연결" : apiStatus === "offline" ? "데모" : "확인 중"}</span>
       </div>
     </header>
   );
@@ -739,7 +731,6 @@ function DashboardPage({
   filters,
   videos,
   archiveItems,
-  apiStatus,
   loading,
   onNavigate,
   onOpenVideo,
@@ -747,7 +738,6 @@ function DashboardPage({
   filters: ContextFilters;
   videos: TrainingVideo[];
   archiveItems: ArchiveItem[];
-  apiStatus: "checking" | "online" | "offline";
   loading: boolean;
   onNavigate: (page: PageKey) => void;
   onOpenVideo: (video: TrainingVideo) => void;
@@ -780,7 +770,6 @@ function DashboardPage({
       </div>
 
       <div className="metric-grid">
-        <MetricCard label="API 상태" value={apiStatus === "online" ? "연결됨" : apiStatus === "offline" ? "데모" : "확인 중"} tone={apiStatus === "online" ? "green" : "amber"} />
         <MetricCard label="연결 영상" value={`${videos.length}`} tone="cyan" />
         <MetricCard label="노하우 문서" value={`${archiveItems.length}`} tone="cyan" />
         <MetricCard label="불러오기" value={loading ? "동기화 중" : "준비됨"} tone="green" />
@@ -1004,7 +993,8 @@ function ChatPage({
   input,
   loading,
   filters,
-  backendLogs,
+  chatLogHeight,
+  onStartResize,
   onInput,
   onSubmit,
 }: {
@@ -1012,12 +1002,19 @@ function ChatPage({
   input: string;
   loading: boolean;
   filters: ContextFilters;
-  backendLogs: BackendLogEntry[];
+  chatLogHeight: number;
+  onStartResize: (event: PointerEvent<HTMLDivElement>) => void;
   onInput: (value: string) => void;
   onSubmit: (event?: FormEvent, text?: string) => void;
 }) {
+  const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    endOfMessagesRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [messages.length, loading]);
+
   return (
-    <section className="chat-shell">
+    <section className="chat-shell" style={{ "--chat-log-height": `${chatLogHeight}px` } as CSSProperties}>
       <div className="chat-context">
         <span className="chip">{MATERIAL_LABEL[filters.material]}</span>
         <span className="chip">{filters.position}</span>
@@ -1029,10 +1026,13 @@ function ChatPage({
         {messages.map((message) => (
           <ChatBubble key={message.id} message={message} />
         ))}
+        <div ref={endOfMessagesRef} />
         {loading && <span className="loading-line">숙련공 노하우를 찾는 중...</span>}
       </div>
 
-      <LiveBackendLog logs={backendLogs} />
+      <div className="chat-resizer" role="separator" aria-label="대화 영역 높이 조절" onPointerDown={onStartResize}>
+        <span />
+      </div>
 
       <div className="suggestion-row">
         {SAMPLE_PROMPTS.map((prompt) => (
@@ -1278,7 +1278,6 @@ function MasterInputPage({
       <SectionHeader
         title={PAGE_LABEL.input}
         body="숙련공의 현장 노하우를 일정한 형식으로 입력해 챗봇과 사진 피드백이 참고할 수 있는 자료로 저장합니다."
-        right={<span className="chip green">저장 API 연결됨</span>}
       />
       <div className="input-layout">
         <Panel title="숙련공 노하우 입력" meta="표준 입력">
@@ -1309,7 +1308,6 @@ function MasterInputPage({
           </Panel>
           <Panel title="저장 전 확인" meta="품질 확인">
             <Checklist items={["필수 항목", "전류/가스 값", "근거 영상", "숙련공 검토"]} doneCount={validations.filter(Boolean).length} />
-            <Callout tone="green" title="백엔드 연결됨" body="저장된 항목은 노하우 문서함과 챗봇 검색에 바로 반영됩니다." />
           </Panel>
         </div>
       </div>
@@ -1323,7 +1321,6 @@ function InsightDrawer({
   videos,
   citations,
   knowhow,
-  apiStatus,
   photoFeedback,
 }: {
   page: PageKey;
@@ -1331,7 +1328,6 @@ function InsightDrawer({
   videos: TrainingVideo[];
   citations: Array<{ id: string; title: string }>;
   knowhow: KnowhowResponse | null;
-  apiStatus: "checking" | "online" | "offline";
   photoFeedback: FeedbackResponse | null;
 }) {
   return (
@@ -1347,14 +1343,6 @@ function InsightDrawer({
           <span className="chip">{filters.position}</span>
           <span className="chip amber">{STAGE_LABEL[filters.stage]}</span>
         </div>
-      </div>
-      <div className="drawer-section">
-        <span className="drawer-label">API 상태</span>
-        <Callout
-          tone={apiStatus === "online" ? "green" : "amber"}
-          title={apiStatus === "online" ? "연결됨" : "데모 모드"}
-          body={apiStatus === "online" ? API_BASE_URL : "FastAPI 백엔드를 실행하면 실제 노하우 검색, 업로드, 영상 기능이 연결됩니다."}
-        />
       </div>
       <div className="drawer-section">
         <span className="drawer-label">추천 영상</span>
@@ -1388,36 +1376,6 @@ function InsightDrawer({
   );
 }
 
-function LiveBackendLog({ logs }: { logs: BackendLogEntry[] }) {
-  const visibleLogs = logs
-    .filter((log) => ["/api/answer", "/api/feedback", "/api/knowhow", "/api/training-videos", "/api/upload"].includes(log.path))
-    .slice(-6)
-    .reverse();
-
-  return (
-    <section className="live-log-panel">
-      <div className="live-log-head">
-        <div>
-          <strong>실시간 백엔드 연동 로그</strong>
-          <span>터미널의 FastAPI 로그와 같은 요청 흐름입니다.</span>
-        </div>
-        <span className="chip green">Vertex AI: {visibleLogs[0]?.provider || "확인 중"}</span>
-      </div>
-      <div className="live-log-list">
-        {visibleLogs.map((log, index) => (
-          <div key={`${log.time}-${log.path}-${index}`} className="live-log-row">
-            <span>{log.time}</span>
-            <strong>{log.method} {log.path}</strong>
-            <em className={log.status < 400 ? "ok" : "fail"}>{log.status}</em>
-            <small>{log.duration_ms}ms · {log.model || "-"}</small>
-          </div>
-        ))}
-        {!visibleLogs.length && <p className="muted">아직 표시할 백엔드 호출이 없습니다. 질문을 보내면 POST /api/answer 로그가 표시됩니다.</p>}
-      </div>
-    </section>
-  );
-}
-
 function ChatBubble({ message }: { message: ChatMessage }) {
   if (message.role === "user") {
     return (
@@ -1445,8 +1403,18 @@ function ChatBubble({ message }: { message: ChatMessage }) {
   );
 }
 
+function sanitizeAssistantAnswer(value: string) {
+  return value
+    .replace(/^\s*(?:근거|출처):\s*\[[^\]]+\]\s*$/gim, "")
+    .replace(/^\s*관련 근거는 화면의 근거 자료\/추천 영상에서 확인할 수 있습니다\.?\s*$/gim, "")
+    .replace(/\[(?:stainless|carbon_steel|aluminum|posture)_[^\]]+?\]/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function ChatAnswer({ answer }: { answer: AnswerResponse }) {
   const routing = answer.routing;
+  const displayAnswer = sanitizeAssistantAnswer(answer.answer);
   const hitItems = (answer.hits || [])
     .slice(0, 3)
     .map(formatHitForDisplay);
@@ -1459,18 +1427,21 @@ function ChatAnswer({ answer }: { answer: AnswerResponse }) {
 
   return (
     <div className="feedback-answer">
-      <p className="answer-summary">{answer.answer}</p>
+      <p className="answer-summary">{displayAnswer}</p>
       <div className="chat-route-row">
         <span className="chip green">근거 답변</span>
         {routing?.material && <span className="chip">{labelForMaterial(routing.material)}</span>}
         {routing?.position && <span className="chip">{routing.position}</span>}
         {routing?.reason && <span className="context-note">{routing.reason}</span>}
       </div>
-      <div className="answer-grid">
-        <AnswerBlock title="참고한 노하우" items={hitItems} />
-        <AnswerBlock title="연결된 작업 영상" items={videoItems} tone="green" />
-        <AnswerBlock title="출처 정보" items={sourceItems} tone="amber" />
-      </div>
+      <details className="answer-evidence">
+        <summary>근거 노하우와 연결 영상 보기</summary>
+        <div className="answer-grid">
+          <AnswerBlock title="참고한 노하우" items={hitItems} />
+          <AnswerBlock title="연결된 작업 영상" items={videoItems} tone="green" />
+          <AnswerBlock title="출처 정보" items={sourceItems} tone="amber" />
+        </div>
+      </details>
     </div>
   );
 }
@@ -1857,7 +1828,7 @@ function fallbackFeedback(filters: ContextFilters, observation: string, knowhow:
       provider: "local-demo",
       model: "fallback",
       dry_run: true,
-      reason: "백엔드 API 연결 실패 또는 오류로 로컬 대체 응답을 사용했습니다.",
+      reason: "일시적으로 기본 노하우 답변을 사용했습니다.",
     },
   };
 }
