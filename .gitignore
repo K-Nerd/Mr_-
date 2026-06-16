@@ -6,6 +6,10 @@ node_modules/
 .next/
 dist/
 build/
+out/
+.chrome-debug/
+*.tsbuildinfo
+ui-check*.png
 
 __pycache__/
 *.py[cod]
@@ -16,6 +20,7 @@ venv/
 
 apps/api/rag_pipeline/uploads/
 logs/
+reference_designs/
 
 *.mp4
 *.mov

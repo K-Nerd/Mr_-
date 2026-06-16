@@ -10,7 +10,7 @@ from pathlib import Path
 import chromadb
 
 from docs_loader import load_doc_chunks
-from embedder import embed, MODEL_NAME
+from embedder import embed, FALLBACK_MODEL_NAME, MODEL_NAME
 from loader import load_all_chunks
 
 
@@ -35,7 +35,7 @@ def build(db_dir: Path = DEFAULT_DB_DIR) -> None:
 
     collection = client.create_collection(
         name=COLLECTION,
-        metadata={"embedding_model": MODEL_NAME, "hnsw:space": "cosine"},
+        metadata={"embedding_model": f"{MODEL_NAME}; fallback={FALLBACK_MODEL_NAME}", "hnsw:space": "cosine"},
     )
 
     print("임베딩 생성 중...")

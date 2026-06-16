@@ -1,28 +1,25 @@
-# 영상 파일 (별도 공유)
+# 작업 영상 파일 안내
 
-GitHub 용량 제한 때문에 원본 mp4 14개(약 1.3GB)는 이 리포지토리에 포함되지 않습니다.
+이 폴더에는 원래 작업 영상 MP4가 들어갑니다. GitHub 업로드용 버전에서는 대용량 파일을 제외했습니다.
 
-## 받는 법
+## 왜 제외했나요?
 
-팀 공유 드라이브에서 다운로드 후 이 폴더에 그대로 넣으세요.
+- 일부 MP4가 100MB에 가깝고, 하나는 320MB라 GitHub 일반 push 제한에 걸립니다.
+- 저장소에는 영상 메타데이터와 UI/재생 코드만 포함했습니다.
 
-**파일명은 `dataset/sources.json`의 `video` 필드와 정확히 일치해야 합니다.** 예:
+## 같은 화면으로 재생하려면
 
-```
-dataset/video/stainless steel 6G pipe TIG welding.mp4
-dataset/video/02-6G-시럼이란-모재높이설정.mp4
-dataset/video/6G최종자세2-높은자세.mp4
-```
+별도 공유 드라이브나 Git LFS로 MP4를 받은 뒤 이 폴더에 넣으세요.
 
-## 확인
+예시:
 
-```bash
-cd rag_pipeline
-./rag videos    # 영상 카탈로그
-# 또는 서버 띄우고 브라우저:
-./rag serve
-# → http://localhost:8000/api/video/video_ss_6g  (재생되면 정상)
+```text
+apps/api/dataset/video/stainless steel 6G pipe TIG welding.mp4
+apps/api/dataset/video/local-stainless-welding.mp4
+apps/api/dataset/video/local-carbon-steel-welding.mp4
+apps/api/dataset/video/local-aluminum-welding2.mp4
 ```
 
-영상이 없어도 RAG 기능(텍스트 노하우 추출, Agent 피드백)은 정상 동작합니다.
-`/api/video/{id}` 엔드포인트만 404를 반환합니다.
+파일명은 `apps/api/dataset/sources.json`의 `video` 값과 정확히 일치해야 합니다.
+
+MP4가 없어도 RAG, 챗봇, 파일 업로드, ChromaDB 구축 기능은 동작합니다. 다만 영상 카드에는 `파일 미연결` 상태가 표시됩니다.

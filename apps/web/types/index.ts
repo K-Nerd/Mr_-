@@ -15,6 +15,7 @@ export type PageKey =
   | "video-detail"
   | "chat"
   | "feedback"
+  | "community"
   | "archive"
   | "archive-detail"
   | "input";
@@ -77,6 +78,16 @@ export interface AnswerResponse {
   citations?: Citation[];
   citations_markdown?: string;
   hits?: AnswerHit[];
+}
+
+export interface ImageResponse {
+  prompt: string;
+  model: string;
+  provider?: string;
+  used_env?: string | null;
+  mime_type: string;
+  data_url: string;
+  text?: string | null;
 }
 
 export interface FeedbackPayload {
@@ -173,9 +184,34 @@ export interface VideoUploadResponse {
   stored_path: string;
 }
 
+export interface RagUpdateResult {
+  ok: boolean;
+  status: string;
+  collection: string;
+  collection_count_before: number | null;
+  collection_count_after: number | null;
+  rebuild_logs: string[];
+  error?: string | null;
+}
+
 export interface KnowledgeSaveResponse {
   status: string;
   entry: Record<string, string>;
+  rag_update?: RagUpdateResult;
+  knowhow: KnowhowResponse;
+}
+
+export interface KnowledgeFileUploadResponse extends RagUpdateResult {
+  stored_path: string;
+  entries_added: number;
+  chunks_added: number;
+  file_type?: string;
+  pages_extracted?: number;
+  parsed_preview?: Array<{
+    page?: number | null;
+    text: string;
+  }>;
+  requested_knowledge_type?: string;
   knowhow: KnowhowResponse;
 }
 
@@ -210,4 +246,5 @@ export interface ChatMessage {
   createdAt: string;
   response?: FeedbackResponse;
   answer?: AnswerResponse;
+  image?: ImageResponse;
 }

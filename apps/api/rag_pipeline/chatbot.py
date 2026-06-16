@@ -15,13 +15,14 @@ API 키 탐색 순서 (env):
 from __future__ import annotations
 
 import argparse
+import base64
 import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
 import citations
-from retriever import Hit, Retriever, RouteDecision
+from retriever import Hit, Retriever, RouteDecision, route_query
 
 
 def _load_dotenv() -> None:
@@ -54,8 +55,23 @@ VERTEX_LOCATION_ENVS = ("GCP_LOCATION", "GOOGLE_CLOUD_LOCATION", "VERTEX_LOCATIO
 
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image"
 
 API_KEY_ENVS = (GROQ_ENV,) + GEMINI_ENVS + VERTEX_PROJECT_ENVS
+
+
+def _is_placeholder_value(value: str | None) -> bool:
+    if not value:
+        return True
+    normalized = value.strip().lower()
+    return normalized in {
+        "your-gcp-project-id",
+        "your-project-id",
+        "your-project",
+        "project-id",
+        "AIzaSy...".lower(),
+        "gsk_...",
+    }
 
 
 def _looks_like_gemini_key(v: str) -> bool:
@@ -83,7 +99,7 @@ def _resolve_provider() -> tuple[str | None, str, str | None, str]:
 
     for name in VERTEX_PROJECT_ENVS:
         project = os.environ.get(name)
-        if project:
+        if project and not _is_placeholder_value(project):
             model = model_override or os.environ.get("VERTEX_MODEL") or DEFAULT_GEMINI_MODEL
             return project, "vertex", name, model
 
@@ -110,20 +126,19 @@ def _get_model() -> str:
     return model
 
 
-SYSTEM_PROMPT = """당신은 파이프 TIG 용접 현장 코치입니다.
-사용자의 질문에 대해 제공된 <context> 안의 노하우만 근거로 답하세요.
+SYSTEM_PROMPT = """당신은 마스터-카피 AI입니다. 파이프 TIG 용접을 잘 아는 현장 코치이지만, 일반 대화와 개념 설명도 자연스럽게 답합니다.
 
-응답 규칙:
+답변 규칙:
 - 한국어로 답합니다.
-- 말투는 친절하고 실무적인 존댓말을 씁니다. "신입", "~하네", "~하게" 같은 훈계식 말투는 쓰지 않습니다.
-- 내부 chunk id, entry id, source id는 절대 답변 본문에 쓰지 않습니다.
-- 모르는 내용은 추측하지 말고 "제공된 노하우에서는 확인되지 않습니다"라고 말합니다.
-- 전류, 가스 유량, 각도, 간격 같은 숫자는 context에 있는 값만 그대로 씁니다.
-- 답변은 너무 짧게 끝내지 말고 현장에서 바로 쓸 수 있게 설명합니다.
-- 형식은 "요약", "먼저 확인할 것", "조정 방법", "주의할 점" 순서로 구성합니다.
-- 각 항목은 1~3문장으로 씁니다. 전체 답변은 보통 6~10문장 정도로 충분히 설명합니다.
-- bullet은 4~7개 정도 사용하되, 같은 말을 반복하지 않습니다.
-- 답변 마지막에 출처, 근거, 내부 ID 표기 문장을 따로 붙이지 않습니다. 근거와 영상은 화면 카드에서 보여줍니다.
+- 말투는 친절하고 자연스럽게 유지합니다. 너무 딱딱한 매뉴얼처럼 쓰지 않습니다.
+- 인사나 일반 개념 질문이면 일반 챗봇처럼 바로 답합니다.
+- <context>가 제공되면 참고자료로만 사용합니다. 질문과 관련 없는 context는 무시해도 됩니다.
+- context에 없는 수치나 현장 조건은 확정처럼 말하지 말고, 확인이 필요한 사항으로 표현합니다.
+- 내부 chunk id, entry id, source id는 본문에 쓰지 않습니다.
+- 화면에서 렌더링되는 간단한 Markdown을 사용할 수 있습니다.
+- 제목은 짧게, 굵게 표시는 핵심 용어에만, 목록은 필요한 만큼만 사용합니다.
+- 표와 코드블록은 사용하지 않습니다.
+- 마지막에 출처, 근거, 내부 ID 문장을 따로 붙이지 않습니다. 근거와 영상은 화면 카드에서 보여줍니다.
 """
 
 
@@ -232,9 +247,45 @@ def _local_answer(query: str, hits: list[Hit], decision: RouteDecision, reason: 
     if available:
         lines.extend(["", "근거 영상:", *[f"- {citation.title}" for citation in available[:3]]])
 
-    if reason:
-        lines.extend(["", "참고: 현재 외부 LLM이 연결되지 않아 로컬 RAG 데이터 기준으로 답변했습니다."])
     return "\n".join(lines)
+
+
+def _is_smalltalk(query: str) -> bool:
+    raw = query.strip().lower()
+    compact = re.sub(r"[\s!?.~]+", "", raw)
+    return compact in {
+        "hi",
+        "hello",
+        "hey",
+        "안녕",
+        "안녕하세요",
+        "하이",
+        "ㅎㅇ",
+        "테스트",
+    }
+
+
+SPECIFIC_WELDING_TERMS = [
+    "비드", "루트", "핫패스", "캡패스", "채움", "언더컷", "기공", "결함",
+    "백비드", "백퍼지", "퍼지", "전류", "가스", "용융지", "토치", "텅스텐",
+    "필러", "와이어", "입열", "크랙", "균열", "산화", "흑화", "처짐",
+    "꺼질", "꺼짐", "불안정", "자세", "시선", "오버헤드", "6시", "3시", "12시",
+    "1g", "2g", "5g", "6g", "tig", "sus", "carbon", "aluminum",
+]
+
+
+def _looks_like_specific_welding_question(query: str, explicit: RouteDecision) -> bool:
+    q = query.lower()
+    if explicit.material or explicit.position or explicit.is_posture:
+        return True
+    return any(term in q for term in SPECIFIC_WELDING_TERMS)
+
+
+def _clean_model_answer(text: str) -> str:
+    text = re.sub(r"\s*\[(?:\d+|source\s*\d+)\]", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"```+", "", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
 
 
 def _doc_hits(retriever: Retriever, query: str, decision: RouteDecision, k: int) -> list[Hit]:
@@ -246,32 +297,86 @@ def _doc_hits(retriever: Retriever, query: str, decision: RouteDecision, k: int)
     return []
 
 
-def answer(query: str, k: int = MAX_RAG_HITS, dry_run: bool = False) -> Answer:
-    r = Retriever()
-    hits, decision = r.search(query, k=k)
+def answer(
+    query: str,
+    k: int = MAX_RAG_HITS,
+    dry_run: bool = False,
+    material: str | None = None,
+    position: str | None = None,
+) -> Answer:
+    api_key, provider, env_used, model = _resolve_provider()
+    explicit = route_query(query)
 
-    # 가이드 문서 보강 (doc_section만 따로 메타 필터로)
-    doc_hits = _doc_hits(r, query, decision, k=MAX_DOC_HITS)
+    if _is_smalltalk(query):
+        decision = RouteDecision(None, None, False, "Gemini direct")
+        if dry_run or not api_key:
+            return Answer(
+                text="안녕하세요. 궁금한 점을 편하게 물어보세요. 용접 질문이면 재질, 자세, 증상까지 같이 알려주시면 더 정확히 답변드릴 수 있습니다.",
+                hits=[],
+                decision=decision,
+                citations_md="_No local video citations available._",
+            )
+        user_msg = f"질문: {query}"
+        if provider == "groq":
+            text = _call_groq(SYSTEM_PROMPT, user_msg, api_key, model)
+        elif provider == "vertex":
+            text = _call_vertex(SYSTEM_PROMPT, user_msg, api_key, _get_vertex_location(), model)
+        else:
+            text = _call_gemini(SYSTEM_PROMPT, user_msg, api_key, model)
+        if text.startswith("[") and ("failed" in text.lower() or "실패" in text):
+            text = "안녕하세요. 파이프 TIG 용접 챗봇입니다. 궁금한 용접 상황이나 일반 질문을 편하게 물어보세요."
+        return Answer(
+            text=_clean_model_answer(text),
+            hits=[],
+            decision=decision,
+            citations_md="_No local video citations available._",
+        )
 
-    # rag 청크 우선, doc 청크는 뒤에. id 중복 제거.
-    seen: set[str] = set()
-    merged: list[Hit] = []
-    for h in hits + doc_hits:
-        if h.id in seen:
-            continue
-        seen.add(h.id)
-        merged.append(h)
+    use_rag = _looks_like_specific_welding_question(query, explicit)
+    if use_rag:
+        r = Retriever()
+        search_material = explicit.material or material
+        use_position_fallback = (
+            not explicit.position
+            and position
+            and (not explicit.material or explicit.material == material)
+        )
+        search_position = explicit.position or (position if use_position_fallback else None)
+        hits, decision = r.search(
+            query,
+            k=k,
+            material=search_material,
+            position=search_position,
+            auto_route=not (search_material or search_position),
+        )
+        if not explicit.material and material:
+            decision.reason = f"{decision.reason}; UI material fallback={material}"
+        if use_position_fallback:
+            decision.reason = f"{decision.reason}; UI position fallback={position}"
+        decision.reason = "Gemini + 노하우 참고"
+
+        doc_hits = _doc_hits(r, query, decision, k=MAX_DOC_HITS)
+        seen: set[str] = set()
+        merged: list[Hit] = []
+        for h in hits + doc_hits:
+            if h.id in seen:
+                continue
+            seen.add(h.id)
+            merged.append(h)
+    else:
+        decision = RouteDecision(None, None, False, "Gemini direct")
+        merged = []
 
     context = _format_context(merged)
     user_msg = (
-        f"<context>\n{context}\n</context>\n\n"
+        f"<context>\n{context}\n</context>\n\n질문: {query}"
+        if merged else
         f"질문: {query}"
     )
 
     cits = citations.for_hits(merged)
     cits_md = citations.format_markdown(cits)
 
-    api_key, provider, env_used, model = _resolve_provider()
     if dry_run or not api_key:
         reason = "DRY-RUN" if dry_run else "LLM provider not configured (set GCP_PROJECT_ID for Vertex AI, or GEMINI_API_KEY/GOOGLE_API_KEY)"
         text = _local_answer(query, merged, decision, reason)
@@ -283,9 +388,87 @@ def answer(query: str, k: int = MAX_RAG_HITS, dry_run: bool = False) -> Answer:
         text = _call_vertex(SYSTEM_PROMPT, user_msg, api_key, _get_vertex_location(), model)
     else:
         text = _call_gemini(SYSTEM_PROMPT, user_msg, api_key, model)
-    if _needs_more_detail(text):
-        text = _expand_short_answer(text, merged)
-    return Answer(text=text, hits=merged, decision=decision, citations_md=cits_md)
+    if text.startswith("[") and ("failed" in text.lower() or "실패" in text):
+        text = (
+            _local_answer(query, merged, decision, "External LLM call failed; using local RAG fallback.")
+            if merged else
+            "외부 LLM 호출에 실패했습니다. API 키와 모델 설정을 확인한 뒤 다시 질문해주세요."
+        )
+    return Answer(text=_clean_model_answer(text), hits=merged, decision=decision, citations_md=cits_md)
+
+
+def _get_image_model() -> str:
+    return os.environ.get("IMAGE_MODEL") or os.environ.get("GEMINI_IMAGE_MODEL") or DEFAULT_IMAGE_MODEL
+
+
+def generate_image(prompt: str) -> dict[str, str | None]:
+    clean_prompt = prompt.strip()
+    if not clean_prompt:
+        raise ValueError("Image prompt is empty.")
+
+    api_key, provider, env_used, _ = _resolve_provider()
+    if not api_key or provider == "none":
+        raise RuntimeError("Image generation needs GEMINI_API_KEY/GOOGLE_API_KEY or Vertex AI project settings.")
+    if provider == "groq":
+        raise RuntimeError("Image generation is only available with Gemini API or Vertex AI.")
+
+    try:
+        from google import genai
+        from google.genai import types
+    except ImportError as e:
+        raise RuntimeError(f"google-genai SDK missing: {e}") from e
+
+    model = _get_image_model()
+    if provider == "vertex":
+        client = genai.Client(vertexai=True, project=api_key, location=_get_vertex_location())
+    else:
+        client = genai.Client(api_key=api_key)
+
+    try:
+        resp = client.models.generate_content(
+            model=model,
+            contents=[clean_prompt],
+        )
+    except Exception as e:
+        raise RuntimeError(f"Image generation failed provider={provider} model={model}: {type(e).__name__}: {e}") from e
+
+    parts = list(getattr(resp, "parts", None) or [])
+    if not parts:
+        for candidate in getattr(resp, "candidates", None) or []:
+            content = getattr(candidate, "content", None)
+            parts.extend(getattr(content, "parts", None) or [])
+
+    text_parts: list[str] = []
+    for part in parts:
+        part_text = getattr(part, "text", None)
+        if part_text:
+            text_parts.append(str(part_text).strip())
+
+        inline_data = getattr(part, "inline_data", None)
+        if inline_data is None:
+            continue
+
+        raw_data = getattr(inline_data, "data", None)
+        if not raw_data:
+            continue
+
+        mime_type = getattr(inline_data, "mime_type", None) or "image/png"
+        if isinstance(raw_data, str):
+            encoded = raw_data
+        else:
+            encoded = base64.b64encode(raw_data).decode("ascii")
+        if encoded:
+            return {
+                "prompt": clean_prompt,
+                "model": model,
+                "provider": provider,
+                "used_env": env_used,
+                "mime_type": mime_type,
+                "data_url": f"data:{mime_type};base64,{encoded}",
+                "text": " ".join(part for part in text_parts if part) or "요청하신 이미지를 생성했습니다.",
+            }
+
+    raise RuntimeError("No image was returned by the model.")
 
 
 def _call_groq(system: str, user: str, api_key: str, model: str) -> str:
@@ -302,7 +485,7 @@ def _call_groq(system: str, user: str, api_key: str, model: str) -> str:
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            temperature=0.2,
+            temperature=0.6,
             max_tokens=1024,
         )
     except Exception as e:
@@ -325,7 +508,7 @@ def _call_gemini(system: str, user: str, api_key: str, model: str) -> str:
             config=types.GenerateContentConfig(
                 system_instruction=system,
                 max_output_tokens=1536,
-                temperature=0.2,
+                temperature=0.6,
             ),
         )
     except Exception as e:
@@ -349,7 +532,7 @@ def _call_vertex(system: str, user: str, project: str, location: str, model: str
             config=types.GenerateContentConfig(
                 system_instruction=system,
                 max_output_tokens=1536,
-                temperature=0.2,
+                temperature=0.6,
             ),
         )
     except Exception as e:

@@ -21,12 +21,14 @@
 from __future__ import annotations
 
 import json
+import io
 import mimetypes
 import random
 import re
 import shutil
 import time
 import uuid
+from contextlib import redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal, Optional
@@ -45,6 +47,8 @@ from loader import DATASET_DIR
 
 UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
+KNOWLEDGE_UPLOAD_DIR = UPLOAD_DIR / "knowledge"
+KNOWLEDGE_UPLOAD_DIR.mkdir(exist_ok=True)
 VIDEO_DIR = DATASET_DIR / "video"
 VIDEO_DIR.mkdir(exist_ok=True)
 REQUEST_LOGS: list[dict[str, Any]] = []
@@ -113,6 +117,12 @@ class AnswerRequest(BaseModel):
     query: str = Field(..., description="자유 텍스트 질문")
     k: int = Field(5, ge=1, le=10)
     dry_run: bool = Field(False, description="True면 LLM 호출 없이 프롬프트만 반환")
+    material: Optional[Material] = Field(None, description="질문에 재질이 없을 때 사용할 화면 컨텍스트")
+    position: Optional[Position] = Field(None, description="질문에 자세가 없을 때 사용할 화면 컨텍스트")
+
+
+class ImageRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=1200, description="생성할 이미지 설명")
 
 
 class FeedbackRequest(BaseModel):
@@ -243,6 +253,125 @@ def _write_rag_json(material: str, position: str, payload: dict) -> None:
     _rag_file(material, position).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _decode_knowledge_bytes(data: bytes) -> str:
+    for encoding in ("utf-8-sig", "utf-8", "cp949"):
+        try:
+            return data.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    raise HTTPException(status_code=400, detail="노하우 파일을 읽을 수 없습니다. UTF-8 또는 CP949 텍스트 파일을 올려 주세요.")
+
+
+def _split_knowledge_paragraphs(text: str) -> list[str]:
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    paragraphs = [
+        re.sub(r"\n{2,}", "\n", part).strip(" \n\t-")
+        for part in re.split(r"\n\s*\n+", normalized)
+    ]
+    if len([part for part in paragraphs if part]) <= 2:
+        paragraphs = [
+            part.strip(" \n\t-")
+            for part in re.split(r"(?=\n\d+\.\s+)", f"\n{normalized}")
+        ]
+    return [part for part in paragraphs if part]
+
+
+def _pdf_reader_class():
+    try:
+        from pypdf import PdfReader
+
+        return PdfReader
+    except ImportError:
+        try:
+            from PyPDF2 import PdfReader
+
+            return PdfReader
+        except ImportError as exc:
+            raise HTTPException(
+                status_code=500,
+                detail="PDF 파싱 패키지가 없습니다. `pip install pypdf` 후 API를 다시 실행해 주세요.",
+            ) from exc
+
+
+def _extract_pdf_pages(data: bytes) -> tuple[list[dict[str, Any]], int]:
+    PdfReader = _pdf_reader_class()
+    try:
+        reader = PdfReader(io.BytesIO(data))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"PDF 파일을 열 수 없습니다: {exc}") from exc
+
+    pages: list[dict[str, Any]] = []
+    for index, page in enumerate(reader.pages, 1):
+        text = (page.extract_text() or "").strip()
+        if text:
+            pages.append({"page": index, "text": text})
+
+    if not pages:
+        raise HTTPException(status_code=400, detail="PDF에서 추출 가능한 텍스트를 찾지 못했습니다. 스캔 이미지 PDF는 OCR 처리가 필요합니다.")
+
+    return pages, len(reader.pages)
+
+
+def _extract_knowledge_chunks(data: bytes, suffix: str) -> tuple[list[dict[str, Any]], int, str]:
+    if suffix == ".pdf":
+        pages, page_count = _extract_pdf_pages(data)
+        chunks: list[dict[str, Any]] = []
+        for page in pages:
+            for paragraph in _split_knowledge_paragraphs(page["text"]):
+                chunks.append({"page": page["page"], "text": paragraph})
+        return chunks, page_count, "pdf"
+
+    text = _decode_knowledge_bytes(data)
+    return [{"page": None, "text": paragraph} for paragraph in _split_knowledge_paragraphs(text)], 0, suffix.lstrip(".")
+
+
+def _chroma_count(build_index_module: Any) -> int | None:
+    try:
+        import chromadb
+
+        client = chromadb.PersistentClient(path=str(build_index_module.DEFAULT_DB_DIR))
+        collection = client.get_collection(build_index_module.COLLECTION)
+        return int(collection.count())
+    except Exception:
+        return None
+
+
+def _rebuild_chroma_index() -> dict[str, Any]:
+    logs: list[str] = []
+    before: int | None = None
+    after: int | None = None
+
+    try:
+        import build_index
+
+        before = _chroma_count(build_index)
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            build_index.build()
+        logs = [line.strip() for line in buffer.getvalue().splitlines() if line.strip()]
+        after = _chroma_count(build_index)
+        return {
+            "ok": True,
+            "status": "indexed",
+            "collection": build_index.COLLECTION,
+            "collection_count_before": before,
+            "collection_count_after": after,
+            "rebuild_logs": logs,
+            "error": None,
+        }
+    except Exception as exc:
+        logs.append(f"ChromaDB 재색인 실패: {type(exc).__name__}: {exc}")
+        return {
+            "ok": False,
+            "status": "index_failed",
+            "collection": "welding_rag",
+            "collection_count_before": before,
+            "collection_count_after": after,
+            "rebuild_logs": logs,
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+
+
 @app.get("/api/health", tags=["meta"])
 def health() -> dict:
     api_key, provider, env_used, model = chatbot._resolve_provider()
@@ -251,6 +380,7 @@ def health() -> dict:
         "provider": provider,
         "used_env": env_used,
         "model": model,
+        "image_model": chatbot._get_image_model(),
     }
     if provider == "vertex":
         llm["location"] = chatbot._get_vertex_location()
@@ -337,16 +467,103 @@ def save_knowledge(req: KnowledgeSaveRequest) -> dict[str, Any]:
 
     payload["entries"].append(entry)
     _write_rag_json(req.material, req.position, payload)
+    rag_update = _rebuild_chroma_index()
 
     return {
         "status": "saved",
         "entry": entry,
+        "rag_update": rag_update,
         "knowhow": rag_api.get_knowhow(
             material=req.material,
             position=req.position,
             query=req.defect or req.expert_tip or req.solution,
             top_k=5,
             include_posture=req.position == "6G",
+        ),
+    }
+
+
+@app.post("/api/knowledge-file", tags=["rag"])
+def upload_knowledge_file(
+    file: UploadFile = File(..., description="숙련공 노하우 파일(.txt/.md/.pdf)"),
+    material: Material = Form(...),
+    position: Position = Form(...),
+    stage: str = Form("root_pass"),
+    knowledge_type: str = Form("expert_tip"),
+    source: str = Form(""),
+) -> dict[str, Any]:
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="업로드할 노하우 파일을 선택해 주세요.")
+
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in {".txt", ".md", ".pdf"}:
+        raise HTTPException(status_code=400, detail="v1에서는 .txt, .md, .pdf 노하우 파일만 지원합니다.")
+
+    raw = file.file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="빈 파일은 RAG DB에 적재할 수 없습니다.")
+
+    chunks, page_count, file_type = _extract_knowledge_chunks(raw, suffix)
+    if not chunks:
+        raise HTTPException(status_code=400, detail="파일에서 적재할 문단을 찾지 못했습니다.")
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    safe_name = _safe_slug(Path(file.filename).stem, "knowledge")
+    stored_name = f"{timestamp}_{safe_name}{suffix}"
+    stored_path = KNOWLEDGE_UPLOAD_DIR / stored_name
+    stored_path.write_bytes(raw)
+    stored_rel = str(stored_path.relative_to(Path(__file__).resolve().parent)).replace("\\", "/")
+
+    payload = _read_rag_json(material, position)
+    payload.setdefault("material", material)
+    payload.setdefault("position", position)
+    payload.setdefault("source_ids", [])
+    payload.setdefault("parameters", {})
+    payload.setdefault("entries", [])
+    if source and source not in payload["source_ids"]:
+        payload["source_ids"].append(source)
+
+    uploaded_at = datetime.now().isoformat(timespec="seconds")
+    entries: list[dict[str, str]] = []
+    for index, chunk in enumerate(chunks, 1):
+        page = chunk.get("page")
+        label_suffix = f" p.{page}" if page else f" #{index}"
+        entry = {
+            "type": "expert_tip",
+            "stage": stage,
+            "tip": chunk["text"],
+            "uploaded_file": stored_rel,
+            "uploaded_at": uploaded_at,
+            "source_label": f"{Path(file.filename).name}{label_suffix}",
+        }
+        if page:
+            entry["page"] = str(page)
+        entries.append(entry)
+
+    payload["entries"].extend(entries)
+    _write_rag_json(material, position, payload)
+    rag_update = _rebuild_chroma_index()
+
+    status = "indexed" if rag_update.get("ok") else "saved_index_failed"
+    return {
+        **rag_update,
+        "status": status,
+        "stored_path": stored_rel,
+        "entries_added": len(entries),
+        "chunks_added": len(entries),
+        "file_type": file_type,
+        "pages_extracted": page_count,
+        "parsed_preview": [
+            {"page": chunk.get("page"), "text": chunk["text"][:520]}
+            for chunk in chunks[:5]
+        ],
+        "requested_knowledge_type": knowledge_type,
+        "knowhow": rag_api.get_knowhow(
+            material=material,
+            position=position,
+            query=chunks[0]["text"],
+            top_k=5,
+            include_posture=position == "6G",
         ),
     }
 
@@ -391,7 +608,13 @@ def answer(req: AnswerRequest) -> dict[str, Any]:
     실제 프로덕션 흐름은: 프론트 → /api/knowhow → Agent 서비스 → 답변.
     이 엔드포인트는 Agent가 아직 없을 때의 임시 데모/MVP용.
     """
-    a = chatbot.answer(req.query, k=req.k, dry_run=req.dry_run)
+    a = chatbot.answer(
+        req.query,
+        k=req.k,
+        dry_run=req.dry_run,
+        material=req.material,
+        position=req.position,
+    )
     answer_citations = citations.for_hits(a.hits)
     return {
         "answer": a.text,
@@ -412,6 +635,22 @@ def answer(req: AnswerRequest) -> dict[str, Any]:
             } for h in a.hits
         ],
     }
+
+
+@app.post("/api/image", tags=["demo"])
+def image(req: ImageRequest) -> dict[str, Any]:
+    try:
+        return chatbot.generate_image(req.prompt)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raw = str(e)
+        if "RESOURCE_EXHAUSTED" in raw or "quota" in raw.lower() or "paid plans" in raw.lower():
+            raise HTTPException(
+                status_code=429,
+                detail="Gemini 이미지 생성 모델의 현재 프로젝트 할당량이 부족합니다. Google AI Studio/Cloud에서 이미지 모델 quota 또는 billing을 열면 같은 버튼으로 실제 이미지가 생성됩니다.",
+            )
+        raise HTTPException(status_code=502, detail="이미지 생성 호출에 실패했습니다. API 키와 이미지 모델 설정을 확인해 주세요.")
 
 
 @app.get("/api/training-videos", tags=["video"])

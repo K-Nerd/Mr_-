@@ -85,6 +85,27 @@
       "video": "video/aluminum back weld training.mp4"
     },
     {
+      "id": "local_stainless_welding",
+      "kind": "video",
+      "material": "stainless",
+      "title": "스테인리스 용접 영상",
+      "video": "video/local-stainless-welding.mp4"
+    },
+    {
+      "id": "local_aluminum_welding2",
+      "kind": "video",
+      "material": "aluminum",
+      "title": "알루미늄 용접 영상",
+      "video": "video/local-aluminum-welding2.mp4"
+    },
+    {
+      "id": "local_carbon_steel_welding",
+      "kind": "video",
+      "material": "carbon_steel",
+      "title": "탄소강 용접 영상",
+      "video": "video/local-carbon-steel-welding.mp4"
+    },
+    {
       "id": "video_posture_height",
       "kind": "video",
       "topic": "posture",

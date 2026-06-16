@@ -5,6 +5,8 @@ bge-m3는 한국어/영어 혼재 텍스트에 강하고, sentence-transformers�
 """
 from __future__ import annotations
 
+import hashlib
+import re
 from functools import lru_cache
 from typing import Iterable
 
@@ -12,7 +14,9 @@ import numpy as np
 
 
 MODEL_NAME = "BAAI/bge-m3"
+FALLBACK_MODEL_NAME = "local-hash-1024"
 EMBED_DIM = 1024
+_TOKEN_RE = re.compile(r"[0-9A-Za-z_가-힣]+")
 
 
 @lru_cache(maxsize=1)
@@ -22,8 +26,26 @@ def _get_model():
     from sentence_transformers import SentenceTransformer
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = SentenceTransformer(MODEL_NAME, device=device)
+    model = SentenceTransformer(MODEL_NAME, device=device, local_files_only=True)
     return model
+
+
+def _hash_embed(texts: list[str], normalize: bool = True) -> np.ndarray:
+    vectors = np.zeros((len(texts), EMBED_DIM), dtype=np.float32)
+    for row, text in enumerate(texts):
+        tokens = _TOKEN_RE.findall(text.lower())
+        if not tokens and text:
+            tokens = [text[:64].lower()]
+        for token in tokens:
+            digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
+            index = int.from_bytes(digest[:4], "little") % EMBED_DIM
+            sign = 1.0 if digest[4] % 2 == 0 else -1.0
+            vectors[row, index] += sign
+        if normalize:
+            norm = np.linalg.norm(vectors[row])
+            if norm > 0:
+                vectors[row] /= norm
+    return vectors
 
 
 def embed(texts: Iterable[str], batch_size: int = 16, normalize: bool = True) -> np.ndarray:
@@ -31,15 +53,18 @@ def embed(texts: Iterable[str], batch_size: int = 16, normalize: bool = True) ->
     texts = list(texts)
     if not texts:
         return np.zeros((0, EMBED_DIM), dtype=np.float32)
-    model = _get_model()
-    vecs = model.encode(
-        texts,
-        batch_size=batch_size,
-        normalize_embeddings=normalize,
-        convert_to_numpy=True,
-        show_progress_bar=len(texts) > 32,
-    )
-    return vecs.astype(np.float32)
+    try:
+        model = _get_model()
+        vecs = model.encode(
+            texts,
+            batch_size=batch_size,
+            normalize_embeddings=normalize,
+            convert_to_numpy=True,
+            show_progress_bar=len(texts) > 32,
+        )
+        return vecs.astype(np.float32)
+    except Exception:
+        return _hash_embed(texts, normalize=normalize)
 
 
 if __name__ == "__main__":

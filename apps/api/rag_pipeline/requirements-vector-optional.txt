@@ -1,7 +1,5 @@
-# Optional vector-search stack.
-# The current backend runs without these packages by using local JSON/Markdown
-# retrieval. Install this file only when you want to restore Chroma/embedding
-# based retrieval experiments.
+# Vector-search stack for the full RAG demo.
+# Without these packages, the API falls back to local JSON/Markdown retrieval.
 
 chromadb>=0.5.0
 sentence-transformers>=3.0.0

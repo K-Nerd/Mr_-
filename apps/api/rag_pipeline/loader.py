@@ -22,6 +22,9 @@ class Chunk:
     defect: str          # defect name, "" if N/A
     source_ids: str      # comma-joined (Chroma metadata must be primitive)
     source_file: str     # relative path under dataset/
+    page: str = ""       # uploaded PDF page, "" if N/A
+    uploaded_file: str = ""
+    source_label: str = ""
 
     def to_metadata(self) -> dict:
         meta = asdict(self)
@@ -113,6 +116,9 @@ def _load_one(path: Path) -> list[Chunk]:
             defect=defect,
             source_ids=source_ids,
             source_file=source_file,
+            page=str(entry.get("page", "") or ""),
+            uploaded_file=entry.get("uploaded_file", ""),
+            source_label=entry.get("source_label", ""),
         ))
 
     return chunks

@@ -1,44 +1,46 @@
-"""Lightweight local retriever for the welding RAG dataset.
+"""Query routing plus ChromaDB-first retrieval for the welding RAG dataset.
 
-This default retriever intentionally avoids heavy runtime dependencies such as
-Chroma, torch, and sentence-transformers. It searches the curated JSON and
-Markdown chunks directly so the FastAPI backend can run on a fresh teammate
-machine after installing only the web/API basics.
+This keeps the teammate BE structure: route query -> embed -> ChromaDB metadata
+filter search. If the vector stack is not installed, the backend falls back to a
+lightweight local token search so demos do not crash on a fresh machine.
 """
 from __future__ import annotations
 
 import argparse
 import re
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 from docs_loader import load_doc_chunks
 from loader import load_all_chunks
 
 
+DEFAULT_DB_DIR = Path(__file__).resolve().parent / "chroma_db"
+COLLECTION = "welding_rag"
+
+
 MATERIAL_KEYWORDS: dict[str, list[str]] = {
-    "carbon_steel": ["carbon", "carbon steel", "carbon_steel", "cs", "\ud0c4\uc18c", "\ud0c4\uc18c\uac15"],
-    "stainless": ["stainless", "sus", "ss", "\uc2a4\ud14c\uc778", "\uc2a4\ud14c\uc778\ub9ac\uc2a4"],
-    "aluminum": ["aluminum", "aluminium", "al", "\uc54c\ub8e8\ubbf8\ub284"],
+    "carbon_steel": ["탄소강", "탄소 강", "carbon steel", "carbon_steel", "cs강", " cs ", "연강", "carbon"],
+    "stainless": ["스테인", "스텐", "스뎅", "sus", "stainless", "ss강", "스테인레스", "스테인리스"],
+    "aluminum": ["알루미늄", "알미늄", "알류미늄", "aluminum", "aluminium", " al "],
 }
 
 POSITION_KEYWORDS: dict[str, list[str]] = {
-    "1G": ["1g"],
-    "2G": ["2g", "horizontal"],
-    "5G": ["5g", "vertical"],
-    "6G": ["6g", "45", "\uc790\uc138"],
+    "1G": ["1g", "아래보기", "회전관", "파이프 회전"],
+    "2G": ["2g", "수평", "horizontal"],
+    "5G": ["5g", "수직 상진", "수직상진", "vertical up", "고정관 수직"],
+    "6G": ["6g", "45도", "45°", "사십오도", "경사 고정관", "고정관 45", "자세"],
 }
 
-POSTURE_KEYWORDS = [
-    "posture",
-    "stance",
-    "gaze",
-    "balance",
-    "height",
-    "\uc790\uc138",
-    "\uc2dc\uc120",
-    "\ubb34\uac8c\uc911\uc2ec",
-    "\ub192\uc774",
+POSTURE_KEYWORDS: list[str] = [
+    "자세", "팔꿈치", "팔이", "어깨", "호흡", "시선", "무게중심",
+    "무릎", "발", "다리", "허리", "마스크", "떨", "흔들",
+    "낮은자세", "높은자세", "기본자세", "모재 높이", "높이 설정",
+    "posture", "stance", "gaze", "balance", "height",
 ]
+
+_ROUTE_NOISE = ["텅스텐", "tungsten"]
 
 
 @dataclass
@@ -64,35 +66,49 @@ class Hit:
 
 
 def route_query(query: str) -> RouteDecision:
-    q = f" {query.lower()} "
+    normalized = f" {query.lower()} "
+    for noise in _ROUTE_NOISE:
+        normalized = normalized.replace(noise, " ")
     reasons: list[str] = []
 
     material: str | None = None
     for candidate, keywords in MATERIAL_KEYWORDS.items():
-        if any(keyword.lower() in q for keyword in keywords):
+        if any(keyword.lower() in normalized for keyword in keywords):
             material = candidate
             reasons.append(f"material={candidate}")
             break
 
     position: str | None = None
     for candidate, keywords in POSITION_KEYWORDS.items():
-        if any(keyword.lower() in q for keyword in keywords):
+        if any(keyword.lower() in normalized for keyword in keywords):
             position = candidate
             reasons.append(f"position={candidate}")
             break
 
-    is_posture = any(keyword.lower() in q for keyword in POSTURE_KEYWORDS)
-    if is_posture:
-        reasons.append("posture")
-        if position is None:
-            position = "6G"
+    is_posture = any(keyword.lower() in normalized for keyword in POSTURE_KEYWORDS)
+    if is_posture and (material is None or position == "6G"):
+        material = "posture"
+        reasons.append("forced->posture")
 
     return RouteDecision(
         material=material,
         position=position,
         is_posture=is_posture,
-        reason=", ".join(reasons) or "no explicit route; broad local search",
+        reason=", ".join(reasons) or "no-match",
     )
+
+
+def _build_where(material: str | None, position: str | None) -> dict | None:
+    clauses: list[dict[str, str]] = []
+    if material:
+        clauses.append({"material": material})
+    if position:
+        clauses.append({"position": position})
+    if not clauses:
+        return None
+    if len(clauses) == 1:
+        return clauses[0]
+    return {"$and": clauses}
 
 
 def _tokenize(text: str) -> set[str]:
@@ -100,8 +116,20 @@ def _tokenize(text: str) -> set[str]:
 
 
 class Retriever:
-    def __init__(self) -> None:
-        self._chunks = [*load_all_chunks(), *load_doc_chunks()]
+    def __init__(self, db_dir: Path = DEFAULT_DB_DIR, collection: str = COLLECTION) -> None:
+        self.db_dir = db_dir
+        self.collection_name = collection
+        self.collection: Any | None = None
+        self.vector_error = ""
+        self._chunks = None
+
+        try:
+            import chromadb
+
+            client = chromadb.PersistentClient(path=str(db_dir))
+            self.collection = client.get_collection(collection)
+        except Exception as exc:
+            self.vector_error = f"{type(exc).__name__}: {exc}"
 
     def search(
         self,
@@ -113,35 +141,83 @@ class Retriever:
     ) -> tuple[list[Hit], RouteDecision]:
         if auto_route and material is None and position is None:
             decision = route_query(query)
-            material = decision.material
-            position = decision.position
+            material, position = decision.material, decision.position
         else:
             decision = RouteDecision(material, position, False, "manual")
 
-        filtered = self._filter_chunks(material, position)
-        if not filtered:
-            filtered = self._chunks
-            decision = RouteDecision(material, position, decision.is_posture, f"{decision.reason}; fallback no-filter")
+        if self.collection is not None:
+            hits, vector_decision = self._search_chroma(query, k, material, position, decision)
+            if hits:
+                return hits, vector_decision
+            decision = vector_decision
+
+        hits = self._search_local(query, k, material, position, decision)
+        fallback_reason = "local fallback"
+        if self.vector_error:
+            fallback_reason += f" ({self.vector_error})"
+        return hits, RouteDecision(material, position, decision.is_posture, f"{decision.reason}; {fallback_reason}")
+
+    def _search_chroma(
+        self,
+        query: str,
+        k: int,
+        material: str | None,
+        position: str | None,
+        decision: RouteDecision,
+    ) -> tuple[list[Hit], RouteDecision]:
+        try:
+            from embedder import embed
+
+            q_vec = embed([query])[0].tolist()
+            where = _build_where(material, position)
+            res = self.collection.query(query_embeddings=[q_vec], n_results=k, where=where)
+            hits = _to_hits(res)
+            if hits:
+                return hits, RouteDecision(material, position, decision.is_posture, f"{decision.reason}; chroma")
+
+            if where is not None:
+                res = self.collection.query(query_embeddings=[q_vec], n_results=k)
+                hits = _to_hits(res)
+                return hits, RouteDecision(material, position, decision.is_posture, f"{decision.reason}; chroma fallback no-filter")
+
+            return [], RouteDecision(material, position, decision.is_posture, f"{decision.reason}; chroma empty")
+        except Exception as exc:
+            self.vector_error = f"{type(exc).__name__}: {exc}"
+            return [], RouteDecision(material, position, decision.is_posture, f"{decision.reason}; chroma failed")
+
+    def _search_local(
+        self,
+        query: str,
+        k: int,
+        material: str | None,
+        position: str | None,
+        decision: RouteDecision,
+    ) -> list[Hit]:
+        if self._chunks is None:
+            self._chunks = [*load_all_chunks(), *load_doc_chunks()]
+
+        chunks = self._chunks
+        if material:
+            chunks = [chunk for chunk in chunks if chunk.material in {material, "posture"}]
+        if position:
+            chunks = [chunk for chunk in chunks if chunk.position in {position, ""}]
+        if not chunks:
+            chunks = self._chunks
 
         query_tokens = _tokenize(query)
         scored = []
-        for chunk in filtered:
-            text_tokens = _tokenize(chunk.text)
-            overlap = len(query_tokens & text_tokens)
-            route_bonus = 0
+        for chunk in chunks:
+            score = len(query_tokens & _tokenize(chunk.text))
             if material and chunk.material == material:
-                route_bonus += 4
+                score += 4
             if position and chunk.position == position:
-                route_bonus += 3
+                score += 3
             if decision.is_posture and (chunk.material == "posture" or "posture" in chunk.type):
-                route_bonus += 2
-            score = overlap + route_bonus
-            if score <= 0 and (material or position):
-                score = route_bonus
+                score += 2
             scored.append((score, chunk))
-
         scored.sort(key=lambda item: item[0], reverse=True)
-        hits = [
+
+        return [
             Hit(
                 id=chunk.id,
                 text=chunk.text,
@@ -156,28 +232,14 @@ class Retriever:
             )
             for score, chunk in scored[:k]
         ]
-        return hits, decision
-
-    def _filter_chunks(self, material: str | None, position: str | None):
-        chunks = self._chunks
-        if material:
-            chunks = [chunk for chunk in chunks if chunk.material in {material, "posture"}]
-        if position:
-            chunks = [chunk for chunk in chunks if chunk.position in {position, ""}]
-        return chunks
 
 
 def _to_hits(res: dict) -> list[Hit]:
-    """Compatibility shim for older Chroma-based helpers."""
     if not res.get("ids") or not res["ids"][0]:
         return []
     hits: list[Hit] = []
-    for id_, doc, meta, dist in zip(
-        res["ids"][0],
-        res["documents"][0],
-        res["metadatas"][0],
-        res.get("distances", [[0] * len(res["ids"][0])])[0],
-    ):
+    distances = res.get("distances", [[0] * len(res["ids"][0])])[0]
+    for id_, doc, meta, dist in zip(res["ids"][0], res["documents"][0], res["metadatas"][0], distances):
         hits.append(
             Hit(
                 id=id_,
@@ -199,10 +261,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("query", nargs="?", default="stainless 6G root pass")
     parser.add_argument("-k", type=int, default=5)
+    parser.add_argument("--material")
+    parser.add_argument("--position")
     args = parser.parse_args()
 
     retriever = Retriever()
-    hits, decision = retriever.search(args.query, k=args.k)
+    hits, decision = retriever.search(args.query, k=args.k, material=args.material, position=args.position)
     print(f"route: {decision.reason}")
     for hit in hits:
         print(f"\n[{hit.score}] {hit.id} {hit.material}/{hit.position}/{hit.type}")

@@ -2,6 +2,8 @@ import type {
   AnswerResponse,
   BackendLogEntry,
   FeedbackResponse,
+  ImageResponse,
+  KnowledgeFileUploadResponse,
   KnowledgeSaveResponse,
   KnowhowResponse,
   MaterialKey,
@@ -52,14 +54,36 @@ function logApiCall(input: {
 
   const statusLabel = input.status ? ` ${input.status}` : "";
   const label = `[FastAPI] ${input.method} ${input.path}${statusLabel} (${input.durationMs}ms)`;
-  const logger = input.error ? console.error : console.info;
+  const logger = input.error ? console.warn : console.info;
 
   console.groupCollapsed(label);
   logger("url", input.url);
-  if (input.requestBody !== undefined) logger("request", input.requestBody);
-  if (input.responseBody !== undefined) logger("response", input.responseBody);
-  if (input.error !== undefined) logger("error", input.error);
+  if (input.requestBody !== undefined) logger("request", summarizeLogValue(input.requestBody));
+  if (input.responseBody !== undefined) logger("response", summarizeLogValue(input.responseBody));
+  if (input.error !== undefined) logger("error", summarizeLogValue(input.error));
   console.groupEnd();
+}
+
+function summarizeLogValue(value: unknown) {
+  if (value instanceof Error) {
+    return value.message.length > 240 ? `${value.message.slice(0, 240)}...` : value.message;
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value) as { detail?: unknown };
+      if (typeof parsed.detail === "string") {
+        return parsed.detail.length > 240 ? `${parsed.detail.slice(0, 240)}...` : parsed.detail;
+      }
+      return parsed;
+    } catch {
+      return value.length > 240 ? `${value.slice(0, 240)}...` : value;
+    }
+  }
+  return value;
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -70,13 +94,27 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   let logged = false;
 
   try {
-    const response = await fetch(url, {
+    const requestInit = {
       ...init,
       headers: {
         ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
         ...init?.headers,
       },
-    });
+    };
+    let response: Response | null = null;
+    let fetchError: unknown = null;
+    const attempts = method === "GET" ? 3 : 1;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      try {
+        response = await fetch(url, requestInit);
+        fetchError = null;
+        break;
+      } catch (error) {
+        fetchError = error;
+        if (attempt < attempts - 1) await wait(350);
+      }
+    }
+    if (!response) throw fetchError instanceof Error ? fetchError : new Error("Failed to fetch");
 
     if (!response.ok) {
       const message = await response.text().catch(() => "");
@@ -195,6 +233,8 @@ export async function sendChatQuestion(input: {
   query: string;
   k?: number;
   dry_run?: boolean;
+  material?: MaterialKey;
+  position?: Position;
 }): Promise<AnswerResponse> {
   return requestJson<AnswerResponse>("/api/answer", {
     method: "POST",
@@ -202,6 +242,19 @@ export async function sendChatQuestion(input: {
       query: input.query,
       k: input.k || 5,
       dry_run: input.dry_run,
+      material: input.material,
+      position: input.position,
+    }),
+  });
+}
+
+export async function generateImage(input: {
+  prompt: string;
+}): Promise<ImageResponse> {
+  return requestJson<ImageResponse>("/api/image", {
+    method: "POST",
+    body: JSON.stringify({
+      prompt: input.prompt,
     }),
   });
 }
@@ -266,6 +319,28 @@ export async function saveKnowledge(input: {
   return requestJson<KnowledgeSaveResponse>("/api/knowledge", {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+export async function uploadKnowledgeFile(input: {
+  file: File;
+  material: MaterialKey;
+  position: Position;
+  stage: string;
+  knowledge_type: string;
+  source: string;
+}): Promise<KnowledgeFileUploadResponse> {
+  const body = new FormData();
+  body.append("file", input.file);
+  body.append("material", input.material);
+  body.append("position", input.position);
+  body.append("stage", input.stage);
+  body.append("knowledge_type", input.knowledge_type);
+  if (input.source) body.append("source", input.source);
+
+  return requestJson<KnowledgeFileUploadResponse>("/api/knowledge-file", {
+    method: "POST",
+    body,
   });
 }
 
